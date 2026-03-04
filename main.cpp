@@ -1,6 +1,7 @@
 #include "ConfigParser.hpp"
 #include "server/server.hpp"
 #include <iostream>
+#include "server/MainLoop.hpp"
 
 
 
@@ -19,12 +20,8 @@ int main(int ac, char** av)
 		parser.parse(config_file);
 		std::cout << "Config parsed successfully!" << std::endl;
 		const std::vector<ServerConfig>& serv = parser.getServers();
-		std::vector<Server> servers;
-		for (size_t i = 0; i < serv.size(); i++)
-		{
-			servers.push_back(Server(serv[i], i));
-			servers[i].setSockets();
-		}
+		MainLoop mainLoop(serv);
+		mainLoop.start();
 	}
 	catch (const std::exception& e)
 	{

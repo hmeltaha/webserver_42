@@ -1,10 +1,9 @@
-#include "server.hpp"
+#include "Server.hpp"
 
 Server::Server(const ServerConfig& config, int index)
 {
 	this->config = config;
 	this->index = index;
-	serverFd = -1;
 }
 Server::~Server()
 {
@@ -28,30 +27,32 @@ Server::~Server()
  * 
  */
 
-
- /**
-  * 
-  * setsocket() --> This allows the program to reuse a port immediately after it closes.
-  * becouse affter cloesing the server the port go to state called "TIME_WAIT". 
-  * it is like : setsockopt(socket, WHERE, WHAT_OPTION, VALUE, SIZE)
-  */
-
 void Server::setSockets()
 {
 	serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverFd == -1)
 		throw std::runtime_error("Socket failure\n");
-	int apt = 1;
-	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &apt, sizeof(apt)) < 0)
-		throw std::runtime_error("setsockopt failure\n");
+	 /**
+	 * setsocket() --> This allows the program to reuse a port immediately after it closes.
+	 * becouse affter cloesing the server the port go to state called "TIME_WAIT". 
+	 * it is like : setsockopt(socket, WHERE, WHAT_OPTION, VALUE, SIZE)
+	 */
+	int opt = 1;
+	// Set SO_REUSEADDR to allow reuse of ports in TIME_WAIT state
+	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt)) < 0)
+		throw std::runtime_error("setsockopt SO_REUSEADDR failure\n");
+	
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
 	address.sin_port = htons(config.listen_directives[index].port);
 	// address.sin_addr.s_add = INADDR_ANY;
-	address.sin_addr.s_addr = inet_addr(config.listen_directives[index].host.c_str());
+	address.sin_addr.s_addr = INADDR_ANY;//inet_addr(config.listen_directives[index].host.c_str());
 	if (bind(serverFd,(struct sockaddr*) &address, sizeof(address)) < 0)
+	{
+		perror("bind failed");
 		throw std::runtime_error("bind failure\n");
-	if (listen(serverFd, 100) < 0)
+	}
+	if (listen(serverFd, 5000) < 0)
 		throw std::runtime_error("listen failure\n");
 	
 	// Make the socket non-blocking
@@ -66,7 +67,7 @@ void Server::setSockets()
 	// 	throw std::runtime_error("accept failure\n");
 }
 
-int Server::getSocket() const
+int Server::getSocketFd() const
 {
 	return serverFd;
 }
@@ -76,7 +77,16 @@ int Server::getIndex() const
 	return index;
 }
 
-void Server::serverLoop()
-{
-	//strat epoll loop to handle multiple clients on the same server socket
-}
+// void Server::serverLoop()
+// {
+// 	//strat epoll loop to handle multiple clients on the same server socket
+// 	int epollFd = epoll_create1(0);
+// 	if (epollFd == -1)
+// 		throw std::runtime_error("epoll failure\n");
+// 	struct epoll_event event;
+// 	event.events = EPOLLIN;
+// 	event.data.fd = serverFd;
+// 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverFd, &event) == -1)
+// 		throw std::runtime_error("epoll_ctl failure\n");
+
+// }
