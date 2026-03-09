@@ -49,7 +49,7 @@ void Server::setSockets()
 	address.sin_addr.s_addr = INADDR_ANY;//inet_addr(config.listen_directives[index].host.c_str());
 	if (bind(serverFd,(struct sockaddr*) &address, sizeof(address)) < 0)
 	{
-		perror("bind failed");
+		// perror("bind failed");
 		throw std::runtime_error("bind failure\n");
 	}
 	if (listen(serverFd, 5000) < 0)
