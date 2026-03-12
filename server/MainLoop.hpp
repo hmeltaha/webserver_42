@@ -7,7 +7,10 @@
 #include <unistd.h>
 #include <stdexcept>
 #include "Client.hpp"
+void signalHandler(int sig);
 #define MAX_EVENTS 2000
+
+extern bool running;
 
 class MainLoop
 {
@@ -23,6 +26,10 @@ class MainLoop
 		void createEpoll();
 		void handleClientEpollIn(int fd);
 		void handleClientEpollOut(int fd);
+
+		void closeFds();
+		// void signalHandler(int sig);
+
 		void start();
 };
 

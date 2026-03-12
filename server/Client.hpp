@@ -7,12 +7,10 @@
 
 enum ClientState
 {
-	// READING_HEADERS,
-	// READING_BODY,
-	READING_HEADERS_BODY,
+	READING,
 	PROCESSING,
-	SENDING_RESPONSE,
-	NEW
+	WRITING,
+	READING_BODY
 };
 
 class Client
@@ -33,8 +31,8 @@ class Client
 		~Client();
 		int getClientFd() const;
 		void setClientFd(int fd);
-		// void setReqBuff(const std::string& buff);
-		// std::string getReqBuff() const;
+		
+		void addBodyToReq();
 		bool getHeadersReceived() const ;
 		void addToReqBuff(const std::string& buff);
 		ClientState getState() const;

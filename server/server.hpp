@@ -30,6 +30,7 @@ class Server
 		int getSocketFd() const;
 		int getIndex() const;
 		void setSockets();
+		// void closeServerSocket();
 		// void serverLoop();
 };
 

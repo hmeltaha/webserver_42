@@ -5,7 +5,7 @@ Client::Client(/* args */)
 	clientFd = -1;
 	reqBuff = "";
 	headersReceived = false;
-	state = NEW;
+	state = READING;
 }
 
 Client::~Client()
@@ -16,7 +16,7 @@ Client::Client(int fd) : clientFd(fd)
 {
 	reqBuff = "";
 	headersReceived = false;
-	state = NEW;
+	state = READING;
 
 }
 
@@ -64,15 +64,36 @@ std::string Client::getReqBuff() const
 void Client::addToReqBuff(const std::string& buff)
 {
 	this->reqBuff += buff;
-	//Get only
-	if (reqBuff.find("\r\n\r\n") != std::string::npos){
-
-		headersReceived = true;
-		// state = PROCESSING;
+	if (state == READING || state == READING_BODY)
+	{
+		if (reqBuff.find("\r\n\r\n") != std::string::npos){
+	
+			headersReceived = true;
+			state = PROCESSING;
+		}
+		if (reqBuff.find("Content-Length:") != std::string::npos)
+			state = READING_BODY;
 	}
-	//post only we must read the content length and wait until we get all the body
-
 }
+
+void Client::addBodyToReq()
+{
+	size_t pos;
+	size_t end_pos;
+	int body_len;
+
+	pos = reqBuff.find("Content-Length:") + 15;
+	end_pos = reqBuff.find("\r\n", pos);
+	body_len = std::stoi(reqBuff.substr(pos, end_pos - pos));
+	size_t total_len = reqBuff.find("\r\n\r\n") + 4 + body_len;
+	if (reqBuff.length() >= total_len)
+	{
+		// headersReceived = true;
+		state = PROCESSING;
+		reqBuff.resize(total_len);
+	}
+}
+
 
 bool Client::getHeadersReceived() const 
 {

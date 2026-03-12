@@ -47,14 +47,15 @@ void MainLoop::handleClientEpollIn(int fd)
 		return;
 	}
 	buff[flag] = '\0';
-	clients[fd].setState(READING_HEADERS_BODY);
+	clients[fd].setState(READING);
 	clients[fd].addToReqBuff(buff);
-	if (clients[fd].getHeadersReceived())
+	if (clients[fd].getState() == READING_BODY)
+		clients[fd].addBodyToReq();
+	if (clients[fd].getState() == PROCESSING)
 	{
+		////////////////////////////////////////////////////////
 		std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
-
 		std::cout << "just for testing" << std::endl;
-		clients[fd].setState(PROCESSING);
 		std::string response =
 				"HTTP/1.1 200 OK\r\n"
 				"Content-Length: 12\r\n"
@@ -63,8 +64,14 @@ void MainLoop::handleClientEpollIn(int fd)
 				"hi from heba";
 				std::cout << response;
 			clients[fd].setResBuff(response);
+		////////////////////////////////////////////////////////
+		/**
+		 * parse the request and routing then (hala and nora)
+		 * generate the response then
+		 * send response
+		 */
 		
-		clients[fd].setState(SENDING_RESPONSE);
+		clients[fd].setState(WRITING);
 		clients[fd].setResBuff(response);
 		struct epoll_event ev;
 		ev.events = EPOLLOUT ;
@@ -72,12 +79,6 @@ void MainLoop::handleClientEpollIn(int fd)
 		if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
 			throw std::runtime_error("Failed to modify client socket to epoll\n");
 		std::cout << "changing the event to epolout: " << fd << std::endl;
-	
-		/**
-		 * parse the request and routing then (hala and nora)
-		 * generate the response then
-		 * send response
-		 */
 	}
 }
 
@@ -112,7 +113,7 @@ void MainLoop::handleClientEpollOut(int fd)
 	std::cout << "enter the epollout " << std::endl;
 	std::string res = clients[fd].getResBuff();
 	int sent = send(fd, res.c_str(), res.size(), 0);
-	std::cout << "Sent response:\n" << res << std::endl;
+	// std::cout << "Sent response:\n" << res << std::endl;
 	if (sent == -1)
 	{
 		close(fd);
@@ -137,7 +138,7 @@ void MainLoop::start()
 	std::set<int> serverfds;
 	for (size_t i = 0; i < servers.size(); i++)
 		serverfds.insert(servers[i].getSocketFd());
-	while (true)
+	while (running)
 	{
 		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, -1);
 		if (numEvents == -1)
@@ -162,4 +163,17 @@ void MainLoop::start()
 			}
 		}
 	}
+	closeFds();
 }
+
+
+void MainLoop::closeFds()
+{
+	for (size_t i = 0; i < servers.size(); i++)
+		close(servers[i].getSocketFd());
+	for (size_t i = 0; i < clients.size(); i++)
+		close(clients[i].getClientFd());
+	clients.clear();
+	close(epollFD);
+}
+
