@@ -2,30 +2,29 @@ NAME = webserv
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinclude
 
-MAIN_SRC := $(wildcard main.cpp)
-
-SRCS = src/parser/ConfigParser.cpp \
+SRCS = main.cpp \
+       src/parser/ConfigParser.cpp \
        src/parser/ConfigParserUtils.cpp \
        src/parser/ConfigParserValidation.cpp \
        src/parser/ServerConfig.cpp \
-       src/parser/LocationConfig.cpp
-
-ifneq ($(MAIN_SRC),)
-SRCS += $(MAIN_SRC)
-BUILD_TARGET := $(NAME)
-else
-BUILD_TARGET := modules
-endif
+       src/parser/LocationConfig.cpp \
+       src/handlers/FileHandler.cpp \
+       src/handlers/DirectoryLister.cpp \
+       src/handlers/UploadHandler.cpp \
+       src/handlers/DeleteHandler.cpp \
+       src/router/Router.cpp \
+       src/utils/MethodValidator.cpp \
+       src/server/server.cpp \
+       src/server/Client.cpp \
+       src/server/MainLoop.cpp \
+       src/server/SignalHandler.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
-all: $(BUILD_TARGET)
+all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
-
-modules: $(OBJS)
-	@echo "Built objects only (no main.cpp found)."
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -38,4 +37,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re modules
+.PHONY: all clean fclean re

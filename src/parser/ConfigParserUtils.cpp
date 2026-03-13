@@ -53,9 +53,9 @@ int parse_port(std::string port)
 {
 	if (port.empty())
 		throw std::runtime_error("Port cannot be empty");
-	for (int i = 0; i < port.length(); i++)
+	for (size_t i = 0; i < port.length(); i++)
 		{
-			if (!isdigit(port[i]))
+			if (!isdigit((unsigned char)port[i]))
 				throw std::runtime_error("Port must be numeric");	
 		}
 	int port_int = atoi(port.c_str());

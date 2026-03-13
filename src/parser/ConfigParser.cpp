@@ -47,11 +47,13 @@ void ConfigParser::tokenize(const std::string& filename)
 			line = line.substr(0, com_pos);
 		if (line.find_first_not_of(" \t\r\n") == std::string::npos)
 			continue;
-		int i = 0;
+		size_t i = 0;
 		while (i < line.length())
 		{
-			while (i < line.length() && isspace(line[i]))
+			while (i < line.length() && isspace((unsigned char)line[i]))
 				i++;
+			if (i >= line.length())
+				break;
 			std::string token;
 			if (line[i] == '"' || line[i] == '\'')
 			{
@@ -80,7 +82,7 @@ void ConfigParser::tokenize(const std::string& filename)
 			}
 			else
 			{
-				while (i < line.length() && !isspace(line[i])
+				while (i < line.length() && !isspace((unsigned char)line[i])
 						&& line[i] != ';' && line[i] != '{' && line[i] != '}')
 				{
 					token += line[i];
@@ -88,7 +90,6 @@ void ConfigParser::tokenize(const std::string& filename)
 				}
 				if (!token.empty())
 					tokens.push_back(token);
-
 			}
 		}
 		
