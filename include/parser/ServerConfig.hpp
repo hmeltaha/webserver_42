@@ -1,7 +1,7 @@
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
 
-#include "LocationConfig.hpp"
+#include "parser/LocationConfig.hpp"
 #include <map>
 #include <string>
 
@@ -25,6 +25,8 @@ class ServerConfig
 		size_t client_max_body_size;
 		std::vector<LocationConfig>locations;
 		ServerConfig();
+		ServerConfig(const ServerConfig& other);
+		ServerConfig& operator=(const ServerConfig& other);
 		~ServerConfig();
 };
 

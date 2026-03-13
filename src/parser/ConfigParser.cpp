@@ -1,4 +1,4 @@
-#include "ConfigParser.hpp"
+#include "parser/ConfigParser.hpp"
 
 ConfigParser::ConfigParser() : current_token(0) {}
 
@@ -23,39 +23,7 @@ void ConfigParser::parse(const std::string& filename)
 
 	parseConfig();
 	validateServers();
-}
-
-void ConfigParser::validateServers()
-{
-	for (size_t i = 0; i < servers.size(); i++)
-	{
-		for (size_t j = 0; j < servers[i].listen_directives.size(); j++)
-		{
-			std::string host_a = servers[i].listen_directives[j].host;
-			int port_a = servers[i].listen_directives[j].port;
-
-			for (size_t k = i + 1; k < servers.size(); k++)
-			{
-				for (size_t m = 0; m < servers[k].listen_directives.size(); m++)
-				{
-					std::string host_b = servers[k].listen_directives[m].host;
-					int port_b = servers[k].listen_directives[m].port;
-
-					if (port_a == port_b)
-					{
-						if (host_a == host_b || host_a == "0.0.0.0" || host_b == "0.0.0.0")
-						{
-							std::stringstream ss;
-							ss << port_a;
-							std::string port_str = ss.str();
-
-							throw std::runtime_error("Duplicate listen: " + host_b + ":" + port_str);
-						}
-					}
-				}
-			}
-		}
-	}
+	setDefaults();
 }
 
 const std::vector<ServerConfig>& ConfigParser::getServers() const
@@ -68,29 +36,63 @@ void ConfigParser::tokenize(const std::string& filename)
 	std::ifstream file(filename.c_str());
 	if (!file.is_open())
 	throw std::runtime_error("Can't open config file");
+
 	std::string line;
+	int line_number = 0;
 	while (std::getline(file, line))
 	{
-		if (!line.empty() && line[0] == '#')
-		continue;
-		std::istringstream iss(line);
-		std::string word;
-		while (iss >> word)
+		line_number++;
+		size_t com_pos = line.find('#');
+		if (com_pos != std::string::npos)
+			line = line.substr(0, com_pos);
+		if (line.find_first_not_of(" \t\r\n") == std::string::npos)
+			continue;
+		int i = 0;
+		while (i < line.length())
 		{
-			if (!word.empty())
+			while (i < line.length() && isspace(line[i]))
+				i++;
+			std::string token;
+			if (line[i] == '"' || line[i] == '\'')
 			{
-				size_t len = word.length();
-				char last = word[len - 1];
-				if (last == ';' || last == '{' || last == '}')
+				char quote = line[i];
+				i++;
+				while (i < line.length() && line[i] != quote)
 				{
-					if (len > 1)
-					tokens.push_back(word.substr(0, len - 1));
-					tokens.push_back(std::string(1, last));
+					if (line[i] == '\\' && i + 1 < line.length())
+					{
+						i++;
+						token += line[i];
+					}
+					else
+						token += line[i];
+					i++;
 				}
-				else
-				tokens.push_back(word);
+				if (i >= line.length())
+					throw std::runtime_error("Unclosed quote on line" + line_number);
+				i++;
+				tokens.push_back(token);
+			}
+			else if (line[i] == ';' || line[i] == '{' || line[i] == '}')
+			{
+				tokens.push_back(std::string(1, line[i]));
+				i++;
+			}
+			else
+			{
+				while (i < line.length() && !isspace(line[i])
+						&& line[i] != ';' && line[i] != '{' && line[i] != '}')
+				{
+					token += line[i];
+					i++;
+				}
+				if (!token.empty())
+					tokens.push_back(token);
+
 			}
 		}
+		
+		
 	}
 	file.close();
 }

@@ -1,4 +1,4 @@
-#include "ConfigParser.hpp"
+#include "parser/ConfigParser.hpp"
 
 size_t ConfigParser::parseSize(const std::string& size_str)
 {
@@ -13,10 +13,8 @@ size_t ConfigParser::parseSize(const std::string& size_str)
 	size_t i = 0;
 
 	while (i < size_str.length() && isdigit(size_str[i]))
-	{
 		i++;
-	}
-	
+
 	num_pos = size_str.substr(0, i);
 	bytes_part = size_str.substr(i);
 	
@@ -26,6 +24,8 @@ size_t ConfigParser::parseSize(const std::string& size_str)
 	long long num = 0;
 	for (size_t j = 0; j < num_pos.length(); j++)
 	{
+		if (num_pos[j] == '.')
+			throw std::runtime_error("Decimal sizes not supported");
 		num = num * 10 + (num_pos[j] - '0');
 		if (num > 10000)
 			throw std::runtime_error("Size value too large");
@@ -49,6 +49,23 @@ size_t ConfigParser::parseSize(const std::string& size_str)
 	return (size_t)(num * multiplier);
 }
 
+int parse_port(std::string port)
+{
+	if (port.empty())
+		throw std::runtime_error("Port cannot be empty");
+	for (int i = 0; i < port.length(); i++)
+		{
+			if (!isdigit(port[i]))
+				throw std::runtime_error("Port must be numeric");	
+		}
+	int port_int = atoi(port.c_str());
+	if (port_int == 0)
+		throw std::runtime_error("Port 0 is not allowed");
+	if (port_int < 1 || port_int > 65535)
+		throw std::runtime_error("Invalid port number");
+	return port_int;
+}
+
 void ConfigParser::parseListen(ServerConfig& server, const std::string& value)
 {
 	size_t colon_pos = value.find(':');
@@ -69,9 +86,7 @@ void ConfigParser::parseListen(ServerConfig& server, const std::string& value)
 	if (port_part.empty())
 		throw std::runtime_error("No port specified");
 	
-	int port = atoi(port_part.c_str());
-	if (port < 1 || port > 65535)
-		throw std::runtime_error("Invalid port number");
+	int port = parse_port(port_part);
 	
 	for (size_t i = 0; i < server.listen_directives.size(); i++)
 	{
@@ -96,13 +111,12 @@ void ConfigParser::parseServer(ServerConfig& server)
 		else
 			parseServerDirective(server, directive);
 	}
-	
-	if (server.listen_directives.empty())
-		server.listen_directives.push_back(ListenDirective("0.0.0.0", 80));
 }
 
 void ConfigParser::parseServerDirective(ServerConfig& server, const std::string& directive)
 {
+	validateDirectiveContext(const_cast<std::string&>(directive), true, false);
+	
 	if (directive == "listen")
 	{
 		std::string value = getNextToken();
@@ -118,12 +132,14 @@ void ConfigParser::parseServerDirective(ServerConfig& server, const std::string&
 	else if (directive == "root")
 	{
 		std::string value = getNextToken();
+		validatePath(value);
 		server.root = value;
 		expectToken(";");
 	}
 	else if (directive == "index")
 	{
 		std::string value = getNextToken();
+		validatePath(value);
 		server.index = value;
 		expectToken(";");
 	}
@@ -142,6 +158,7 @@ void ConfigParser::parseServerDirective(ServerConfig& server, const std::string&
 			throw std::runtime_error("Invalid HTTP error code: " + error_code);
 		
 		std::string page_path = getNextToken();
+		validatePath(page_path);
 		server.error_page[error] = page_path;
 		expectToken(";");
 	}
@@ -155,6 +172,9 @@ void ConfigParser::parseLocation(ServerConfig& server)
 	
 	if (path.empty() || path[0] != '/')
 		throw std::runtime_error("Location path must start with '/': " + path);
+	
+	if (path != "/" && path[path.length() - 1] == '/')
+		path = path.substr(0, path.length() - 1);
 	
 	for (size_t i = 0; i < server.locations.size(); i++)
 	{
@@ -182,15 +202,19 @@ void ConfigParser::parseLocation(ServerConfig& server)
 
 void ConfigParser::parseLocationDirective(LocationConfig& location, const std::string& directive)
 {
+	validateDirectiveContext(const_cast<std::string&>(directive), false, true);
+	
 	if (directive == "root")
 	{
 		std::string value = getNextToken();
+		validatePath(value);
 		location.root = value;
 		expectToken(";");
 	}
 	else if (directive == "index")
 	{
 		std::string value = getNextToken();
+		validatePath(value);
 		location.index = value;
 		expectToken(";");
 	}
@@ -236,6 +260,7 @@ void ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 	else if (directive == "upload_path")
 	{
 		std::string path = getNextToken();
+		validatePath(path);
 		location.upload_path = path;
 		expectToken(";");
 	}
@@ -244,8 +269,8 @@ void ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 		std::string extension = getNextToken();
 		std::string cgi_path = getNextToken();
 		
-		if (extension.empty() || extension[0] != '.')
-			throw std::runtime_error("CGI extension must start with '.' (e.g., .php)");
+		validateCGIExtension(extension);
+		validatePath(cgi_path);
 		
 		location.cgi_extension = extension;
 		location.cgi_path = cgi_path;

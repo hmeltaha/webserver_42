@@ -19,6 +19,8 @@ class LocationConfig
 		std::vector<std::string>allowed_methods;
 		bool autoindex;
 		LocationConfig();
+		LocationConfig(const LocationConfig& other);
+		LocationConfig& operator=(const LocationConfig& other);
 		~LocationConfig();
 };
 

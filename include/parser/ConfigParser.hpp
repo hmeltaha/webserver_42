@@ -5,28 +5,38 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "ServerConfig.hpp"
+#include <algorithm>
+#include "parser/ServerConfig.hpp"
 
 class ConfigParser
 {
 	private:
 		std::vector<ServerConfig> servers;
 		std::vector<std::string> tokens;
-		size_t current_token;
-		void tokenize(const std::string& filename);
+
 		std::string getNextToken();
 		std::string peekToken();
+
 		bool hasMoreTokens();
+
+		void tokenize(const std::string& filename);
 		void expectToken(const std::string& expected);
 		void parseConfig();
 		void parseServer(ServerConfig& server);
 		void parseLocation(ServerConfig& server);
 		void parseServerDirective(ServerConfig& server, const std::string& directive);
 		void parseLocationDirective(LocationConfig& loc, const std::string& directive);
-		size_t parseSize(const std::string& size_str);
-		int parsePort(const std::string& port_str);
 		void parseListen(ServerConfig& server, const std::string& value);
 		void validateServers();
+		void validateDirectiveContext(std::string& directive_name, bool in_server, bool in_location);
+		void validatePath(const std::string& path);
+		void validateCGIExtension(const std::string& extension);
+		void setDefaults();
+	
+		size_t current_token;
+		size_t parseSize(const std::string& size_str);
+
+		int parsePort(const std::string& port_str);
 	
 	public:
 		ConfigParser();
