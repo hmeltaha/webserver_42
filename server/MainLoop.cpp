@@ -48,13 +48,30 @@ void MainLoop::handleClientEpollIn(int fd)
 	}
 	buff[flag] = '\0';
 	clients[fd].setState(READING);
+
+	//if the req have a body "Content-Length"
 	clients[fd].addToReqBuff(buff);
 	if (clients[fd].getState() == READING_BODY)
 		clients[fd].addBodyToReq();
+	std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
+	
 	if (clients[fd].getState() == PROCESSING)
 	{
 		////////////////////////////////////////////////////////
-		std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
+		// std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
+		RequestParser parser;
+		HttpRequest req = parser.parse(clients[fd].getReqBuff());
+
+		std::cout << "Method: " << req.method << std::endl;
+		std::cout << "Path: " << req.path << std::endl;
+		std::cout << "Version: " << req.version << std::endl;
+
+		for (std::map<std::string, std::string>::iterator it = req.headers.begin();
+			it != req.headers.end(); ++it)
+		{
+			std::cout << it->first << " -> " << it->second << std::endl;
+		}
+
 		std::cout << "just for testing" << std::endl;
 		std::string response =
 				"HTTP/1.1 200 OK\r\n"
@@ -72,13 +89,13 @@ void MainLoop::handleClientEpollIn(int fd)
 		 */
 		
 		clients[fd].setState(WRITING);
-		clients[fd].setResBuff(response);
+		// clients[fd].setResBuff(response);
 		struct epoll_event ev;
 		ev.events = EPOLLOUT ;
 		ev.data.fd = fd;
 		if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
 			throw std::runtime_error("Failed to modify client socket to epoll\n");
-		std::cout << "changing the event to epolout: " << fd << std::endl;
+		// std::cout << "changing the event to epolout: " << fd << std::endl;
 	}
 }
 
@@ -132,6 +149,7 @@ void MainLoop::handleClientEpollOut(int fd)
  * EPOLLIN -->  جديد حاول الاتصال بالسيرفر Client
  * يوجد اتصال جديد ينتظر accept()
  */
+
 void MainLoop::start()
 {
 	createEpoll();

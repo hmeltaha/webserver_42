@@ -78,20 +78,20 @@ void Client::addToReqBuff(const std::string& buff)
 
 void Client::addBodyToReq()
 {
-	size_t pos;
-	size_t end_pos;
-	int body_len;
+	// size_t pos;
+	// size_t end_pos;
+	// int body_len;
 
-	pos = reqBuff.find("Content-Length:") + 15;
-	end_pos = reqBuff.find("\r\n", pos);
-	body_len = std::stoi(reqBuff.substr(pos, end_pos - pos));
-	size_t total_len = reqBuff.find("\r\n\r\n") + 4 + body_len;
-	if (reqBuff.length() >= total_len)
-	{
-		// headersReceived = true;
-		state = PROCESSING;
-		reqBuff.resize(total_len);
-	}
+	// pos = reqBuff.find("Content-Length:") + 15;
+	// end_pos = reqBuff.find("\r\n", pos);
+	// body_len = std::atoi(reqBuff.substr(pos, end_pos - pos));
+	// size_t total_len = reqBuff.find("\r\n\r\n") + 4 + body_len;
+	// if (reqBuff.length() >= total_len)
+	// {
+	// 	// headersReceived = true;
+	// 	state = PROCESSING;
+	// 	reqBuff.resize(total_len);
+	// }
 }
 
 

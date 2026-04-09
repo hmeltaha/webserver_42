@@ -4,8 +4,6 @@
 #include "server/MainLoop.hpp"
 #include <signal.h>
 
-
-
 bool running = true;
 
 int main(int ac, char** av)

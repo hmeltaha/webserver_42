@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <stdexcept>
 #include "Client.hpp"
+#include "../requests/HttpRequest.hpp"
+#include "../requests/RequestParser.hpp"
 void signalHandler(int sig);
 #define MAX_EVENTS 2000
 

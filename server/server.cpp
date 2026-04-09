@@ -77,16 +77,3 @@ int Server::getIndex() const
 	return index;
 }
 
-// void Server::serverLoop()
-// {
-// 	//strat epoll loop to handle multiple clients on the same server socket
-// 	int epollFd = epoll_create1(0);
-// 	if (epollFd == -1)
-// 		throw std::runtime_error("epoll failure\n");
-// 	struct epoll_event event;
-// 	event.events = EPOLLIN;
-// 	event.data.fd = serverFd;
-// 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverFd, &event) == -1)
-// 		throw std::runtime_error("epoll_ctl failure\n");
-
-// }
