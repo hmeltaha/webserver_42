@@ -38,7 +38,7 @@ void MainLoop::addNewClients(int fd)
 
 void MainLoop::handleClientEpollIn(int fd)
 {
-	char buff[1025];
+	char buff[4096];
 	int flag = read(fd, buff, sizeof (buff));
 	if (flag <= 0)
 	{
@@ -52,27 +52,26 @@ void MainLoop::handleClientEpollIn(int fd)
 	//if the req have a body "Content-Length"
 	clients[fd].addToReqBuff(buff);
 	if (clients[fd].getState() == READING_BODY)
-		clients[fd].addBodyToReq();
-	std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
+		clients[fd].addBodyToReq(buff);
+	// std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
 	
 	if (clients[fd].getState() == PROCESSING)
 	{
+		
+		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
+		
 		////////////////////////////////////////////////////////
-		// std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
-		RequestParser parser;
-		HttpRequest req = parser.parse(clients[fd].getReqBuff());
+		std::cout << "Method: " << clients[fd].req.method << std::endl;
+		std::cout << "Path: " << clients[fd].req.path << std::endl;
+		std::cout << "Version: " << clients[fd].req.version << std::endl;
 
-		std::cout << "Method: " << req.method << std::endl;
-		std::cout << "Path: " << req.path << std::endl;
-		std::cout << "Version: " << req.version << std::endl;
-
-		for (std::map<std::string, std::string>::iterator it = req.headers.begin();
-			it != req.headers.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = clients[fd].req.headers.begin();
+			it != clients[fd].req.headers.end(); ++it)
 		{
 			std::cout << it->first << " -> " << it->second << std::endl;
 		}
 
-		std::cout << "just for testing" << std::endl;
+		std::cout << std::endl << "just for testing" << std::endl;
 		std::string response =
 				"HTTP/1.1 200 OK\r\n"
 				"Content-Length: 12\r\n"
@@ -159,7 +158,7 @@ void MainLoop::start()
 	while (running)
 	{
 		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, -1);
-		if (numEvents == -1)
+		if (numEvents == -1 && running == true)
 			throw std::runtime_error("Failed to wait on epoll\n");
 		for (int i = 0; i < numEvents; ++i)
 		{

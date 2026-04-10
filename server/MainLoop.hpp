@@ -9,7 +9,9 @@
 #include "Client.hpp"
 #include "../requests/HttpRequest.hpp"
 #include "../requests/RequestParser.hpp"
-void signalHandler(int sig);
+#include "../signals/SignalHandler.hpp"
+
+
 #define MAX_EVENTS 2000
 
 extern bool running;

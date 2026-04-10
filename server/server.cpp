@@ -39,7 +39,7 @@ void Server::setSockets()
 	 */
 	int opt = 1;
 	// Set SO_REUSEADDR to allow reuse of ports in TIME_WAIT state
-	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt)) < 0)
+	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("setsockopt SO_REUSEADDR failure\n");
 	
 	memset(&address, 0, sizeof(address));
@@ -76,4 +76,3 @@ int Server::getIndex() const
 {
 	return index;
 }
-

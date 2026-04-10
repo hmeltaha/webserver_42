@@ -15,7 +15,6 @@ int main(int ac, char** av)
 	}
 	std::string config_file = av[1];
 	std::cout << "Reading config: " << config_file << std::endl;	
-
 	signal(SIGINT, signalHandler);
 	ConfigParser parser;
 	try
@@ -123,3 +122,7 @@ int main(int ac, char** av)
 // 	}
 // 	return 0;
 // }
+
+
+
+//valgrind --leak-check=full --track-fds=yes --show-leak-kinds=all ./webserv configs/webser.conf
