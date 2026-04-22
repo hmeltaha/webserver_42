@@ -1,0 +1,154 @@
+#include "Router.hpp"
+#include <sstream>
+
+Router::Router(){}
+
+Router::Router(const Router& o)
+{
+	(void)o;
+}
+
+Router& Router::operator=(const Router& o)
+{
+	(void)o;
+	return *this;
+}
+
+Router::~Router(){}
+
+const LocationConfig* Router::findMatchingLocation(const std::string& uri, const ServerConfig& server) const
+{
+	const LocationConfig* best_match = NULL;
+	size_t best_length = 0;
+
+	for (size_t i = 0; i < server.locations.size(); i++)
+	{
+		const LocationConfig& location = server.locations[i];
+		const std::string& location_path = location.path;
+		
+		if (uri.length() >= location_path.length())
+		{
+			if (uri.substr(0, location_path.length()) == location_path)
+			{
+				if (uri.length() == location_path.length() || 
+				    uri[location_path.length()] == '/')
+				{
+					size_t match_length = location_path.length();
+					if (match_length > best_length)
+					{
+						best_match = &location;
+						best_length = match_length;
+					}
+				}
+			}
+		}
+	}
+	
+	return best_match;
+}
+
+bool Router::isRegularFile(const std::string& index_path) const
+{
+	struct stat file;
+	if (stat(index_path.c_str(), &file) != 0)
+		return false;
+	return S_ISREG(file.st_mode); //file type and permission
+}
+
+bool Router::fileExists(const std::string& index_path) const
+{
+	struct stat file_info;
+	int res = stat(index_path.c_str(), &file_info);
+	if (res == 0)
+		return true;
+	else
+		return false;
+}
+std::string Router::resolveIndex(const std::string& directory_path, const LocationConfig& location, const ServerConfig& server)const
+{
+	std::string index_file;
+	if (!location.index.empty())
+		index_file = location.index;
+	else if (!server.index.empty())
+		index_file = server.index;
+	std::string index_path = directory_path + "/" + index_file;
+	if (fileExists(index_path) && isRegularFile(index_path))
+		return index_path;
+	return "";
+}
+
+
+std::string Router::resolvePath(const std::string& uri, const LocationConfig& location , const ServerConfig& server)
+{
+	std::string root;
+	if (!location.root.empty())
+		root = location.root;
+	else if (!server.root.empty())
+		root = server.root;
+	else
+		root = "";
+	
+	std::string relative_path;
+	if (uri.length() > location.path.length())
+		relative_path = uri.substr(location.path.length());
+	else
+		relative_path = "/";
+	
+	if (!relative_path.empty() && relative_path[0] != '/')
+		relative_path = "/" + relative_path;
+	
+	std::string filesystem_path = root;
+	if (!filesystem_path.empty() && filesystem_path[filesystem_path.length() - 1] == '/' && relative_path[0] == '/')
+		filesystem_path += relative_path.substr(1);
+
+	else if (!filesystem_path.empty() && filesystem_path[filesystem_path.length() - 1] != '/' && relative_path[0] != '/')
+		filesystem_path += "/" + relative_path;
+	else
+		filesystem_path += relative_path;
+	
+	return filesystem_path;
+}
+
+bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& location) const
+{
+	if (location.cgi_path.empty() || location.cgi_extension.empty())
+		return false;
+
+	size_t dot_pos = file_path.find_last_of('.');
+	if (dot_pos == std::string::npos)
+		return false;
+	std::string extension = file_path.substr(dot_pos);
+	if (extension == location.cgi_extension)
+		return true;
+	return false;
+}
+
+std::string Router::normalizePath(const std::string& path)
+{
+	std::vector<std::string> stack;
+	std::istringstream stream(path);
+	std::string part;
+
+	while (std::getline(stream, part, '/'))
+	{
+		if (part.empty() || part == ".")
+			continue;
+		else if (part == "..")
+		{
+			if (!stack.empty())
+				stack.pop_back();
+		}
+		else
+			stack.push_back(part);
+	}
+
+	std::string res = "/";
+	for (size_t i = 0; i < stack.size(); i++)
+	{
+		res += stack[i];
+		if (i < stack.size() -1)
+			res += "/";
+	}
+	return res;
+}
+
