@@ -31,7 +31,7 @@ void Server::setSockets()
 {
 	serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverFd == -1)
-		throw std::runtime_error("Socket failure\n");
+		throw std::runtime_error(strerror(errno));
 	 /**
 	 * setsocket() --> This allows the program to reuse a port immediately after it closes.
 	 * becouse affter cloesing the server the port go to state called "TIME_WAIT". 
@@ -40,7 +40,7 @@ void Server::setSockets()
 	int opt = 1;
 	// Set SO_REUSEADDR to allow reuse of ports in TIME_WAIT state
 	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw std::runtime_error("setsockopt SO_REUSEADDR failure\n");
+		throw std::runtime_error(strerror(errno));
 	
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
@@ -50,21 +50,25 @@ void Server::setSockets()
 	if (bind(serverFd,(struct sockaddr*) &address, sizeof(address)) < 0)
 	{
 		// perror("bind failed");
-		throw std::runtime_error("bind failure\n");
+		throw std::runtime_error(strerror(errno));
 	}
 	if (listen(serverFd, 5000) < 0)
-		throw std::runtime_error("listen failure\n");
+		throw std::runtime_error(strerror(errno));
 	
 	// Make the socket non-blocking
 	int flags = fcntl(serverFd, F_GETFL, 0);
 	if (flags == -1)
-		throw std::runtime_error("fcntl failure\n");
+		throw std::runtime_error(strerror(errno));
 	if (fcntl(serverFd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("fcntl set non-blocking failure\n");
+		throw std::runtime_error(strerror(errno));
 
-	// int clientFd = accept(serverFd,(struct sockaddr*) &address, sizeof(address) );
-	// if (clientFd < 0)
-	// 	throw std::runtime_error("accept failure\n");
+	// int newFlags = fcntl(serverFd, F_GETFL, 0);
+	// if (newFlags == -1)
+	//     throw std::runtime_error("fcntl get after set failure\n");
+
+	// if (!(newFlags & O_NONBLOCK)) {
+	//     throw std::runtime_error("Socket is still blocking!");
+	// }
 }
 
 int Server::getSocketFd() const

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include "Client.hpp"
+#include <cerrno>
 #include "../requests/HttpRequest.hpp"
 #include "../requests/RequestParser.hpp"
 #include "../signals/SignalHandler.hpp"
@@ -32,8 +33,6 @@ class MainLoop
 		void handleClientEpollOut(int fd);
 
 		void closeFds();
-		// void signalHandler(int sig);
-
 		void start();
 };
 

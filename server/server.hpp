@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <cstring>
+#include <cerrno>
 #include <unistd.h>
 #include <stdio.h>
 

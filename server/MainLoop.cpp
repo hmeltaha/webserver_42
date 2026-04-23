@@ -19,36 +19,49 @@ MainLoop::~MainLoop()
 
 void MainLoop::addNewClients(int fd)
 {
-	int clientFd = accept(fd, NULL, NULL);
-	if (clientFd == -1)
-		throw std::runtime_error("Failed to accept client connection\n");
-	struct epoll_event event;
-	event.events = EPOLLIN;
-	event.data.fd = clientFd;
-	clients[clientFd] = Client(clientFd);
-	if (epoll_ctl(epollFD, EPOLL_CTL_ADD, clientFd, &event) == -1)
-		throw std::runtime_error("Failed to add client socket to epoll\n");
-	int flags = fcntl(clientFd, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("fcntl failure\n");
-	if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("fcntl set non-blocking failure\n");
+	while (true)
+	{
+		int clientFd = accept(fd, NULL, NULL);
+		if (clientFd == -1)
+		{
+			if (errno == EAGAIN) // no more client are witting right now. i accept all client for now.
+				break;
+			throw std::runtime_error(strerror(errno));
+		}
+		std::cout << "Accept new client....." << std::endl;
+		int flags = fcntl(clientFd, F_GETFL, 0);
+		if (flags == -1)
+			throw std::runtime_error(strerror(errno));
+		if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+			throw std::runtime_error(strerror(errno));
+		struct epoll_event event;
+		event.events = EPOLLIN;
+		event.data.fd = clientFd;
+		clients[clientFd] = Client(clientFd);
+		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, clientFd, &event) == -1)
+			throw std::runtime_error(strerror(errno));
+	}
 }
 
 
 void MainLoop::handleClientEpollIn(int fd)
 {
 	char buff[4096];
-	int flag = read(fd, buff, sizeof (buff));
+	int flag = recv(fd, buff, sizeof (buff),0);
 	if (flag <= 0)
 	{
+		if (flag == -1)
+		{
+			if (errno == EAGAIN)
+				return;
+		}
 		close (fd);
 		clients.erase(fd);
 		return;
 	}
 	buff[flag] = '\0';
 	clients[fd].setState(READING);
-
+	std::cout << buff << std::endl;
 	//if the req have a body "Content-Length"
 	clients[fd].addToReqBuff(buff);
 	if (clients[fd].getState() == READING_BODY)
@@ -70,7 +83,6 @@ void MainLoop::handleClientEpollIn(int fd)
 		{
 			std::cout << it->first << " -> " << it->second << std::endl;
 		}
-
 		std::cout << std::endl << "just for testing" << std::endl;
 		std::string response =
 				"HTTP/1.1 200 OK\r\n"
@@ -93,7 +105,7 @@ void MainLoop::handleClientEpollIn(int fd)
 		ev.events = EPOLLOUT ;
 		ev.data.fd = fd;
 		if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
-			throw std::runtime_error("Failed to modify client socket to epoll\n");
+			throw std::runtime_error(strerror(errno));
 		// std::cout << "changing the event to epolout: " << fd << std::endl;
 	}
 }
@@ -115,18 +127,17 @@ void MainLoop::createEpoll()
 		std::cout << "Trying to add server fd: " << fd << std::endl;
 		event.events = EPOLLIN;
 		event.data.fd = servers[i].getSocketFd();
-		// EPOLL_CTL_ADD --> إضافة fd جديد للمراقبة
+		// EPOLL_CTL_ADD -->  إضافة FD جديد للمراقبة
 		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) == -1)
 		{
-			// perror("epoll_ctl failed");
-			throw std::runtime_error("Failed to add server socket to epoll\n");
+			throw std::runtime_error(strerror(errno));
 		}
 	}
 }
 
 void MainLoop::handleClientEpollOut(int fd)
 {
-	std::cout << "enter the epollout " << std::endl;
+	// std::cout << "enter the epollout " << std::endl;
 	std::string res = clients[fd].getResBuff();
 	int sent = send(fd, res.c_str(), res.size(), 0);
 	// std::cout << "Sent response:\n" << res << std::endl;
@@ -143,7 +154,6 @@ void MainLoop::handleClientEpollOut(int fd)
 	}
 }
 
-
 /**
  * EPOLLIN -->  جديد حاول الاتصال بالسيرفر Client
  * يوجد اتصال جديد ينتظر accept()
@@ -159,7 +169,7 @@ void MainLoop::start()
 	{
 		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, -1);
 		if (numEvents == -1 && running == true)
-			throw std::runtime_error("Failed to wait on epoll\n");
+			throw std::runtime_error(strerror(errno));
 		for (int i = 0; i < numEvents; ++i)
 		{
 			int fd = events[i].data.fd;
