@@ -22,7 +22,7 @@ DeleteHandler& DeleteHandler::operator=(const DeleteHandler& other) {
 DeleteHandler::~DeleteHandler() {
 }
 
-FileResponse DeleteHandler::handleDelete(const Request& request, 
+FileResponse DeleteHandler::handleDelete(const HttpRequest& request, 
                                           const std::string& file_path,
                                           const LocationConfig& location,
                                           const ServerConfig& server)
@@ -34,6 +34,8 @@ FileResponse DeleteHandler::handleDelete(const Request& request,
 	if (!validator.isMethodAllowed("DELETE", location.allowed_methods))
 	{
 		response.status_code = 405;
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 
@@ -41,11 +43,15 @@ FileResponse DeleteHandler::handleDelete(const Request& request,
 	if (stat(file_path.c_str(), &file_info) != 0)
 	{
 		response.status_code = 404;
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 	if (!S_ISREG(file_info.st_mode))
 	{
 		response.status_code = 403;
+		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    	response.mime_type = "text/html";
 		return response;
 	}
 	
@@ -64,6 +70,8 @@ FileResponse DeleteHandler::handleDelete(const Request& request,
 		if (resolved_root)
 			free(resolved_root);
 		response.status_code = 403;
+		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    	response.mime_type = "text/html";
 		return response;
 	}
 	std::string file_str(resolved_file);
@@ -74,6 +82,8 @@ FileResponse DeleteHandler::handleDelete(const Request& request,
 		free(resolved_file);
 		free(resolved_root);
 		response.status_code = 403;
+		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    	response.mime_type = "text/html";
 		return response;
 	}
 	free(resolved_file);
@@ -82,6 +92,8 @@ FileResponse DeleteHandler::handleDelete(const Request& request,
 	if (unlink(file_path.c_str()) != 0)
 	{
 		response.status_code = 500;
+		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 	

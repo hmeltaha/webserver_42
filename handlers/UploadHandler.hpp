@@ -11,29 +11,21 @@
 #include <errno.h>
 #include "../parser/LocationConfig.hpp"
 #include "../parser/ServerConfig.hpp"
+#include "../requests/HttpRequest.hpp"
 #include "FileHandler.hpp"
+#include "../handlers/FileResponse.hpp"
 
-struct Request //what the browser sends to the server
-{
-	std::string method;
-	std::string body;
-	std::string uri;
-	size_t content_length;
-	std::map<std::string, std::string> header;
-
-	Request() : content_length(0){}
-};
 
 
 class UploadHandler {
 public:
-    // Orthodox Canonical Form
+    
     UploadHandler();
     UploadHandler(const UploadHandler& other);
     UploadHandler& operator=(const UploadHandler& other);
     ~UploadHandler();
 
-	FileResponse handleUpload(const Request& request, const LocationConfig& location, const ServerConfig& server);
+	FileResponse handleUpload(const HttpRequest& request, const LocationConfig& location, const ServerConfig& server);
 
 private:
     std::string extractFilename(const std::string& content_disposition);

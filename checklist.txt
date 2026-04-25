@@ -1,0 +1,11 @@
+config parser done
+routing done
+methods GET POST DELETE done (in the handlers)
+autoindex done (in the directory lister)
+static files done(in the filehandler GET)
+error response done
+route() function done (to connect the filehandlers)
+
+what's left:
+putting my part in the main loop
+CGI

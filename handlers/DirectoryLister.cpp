@@ -128,7 +128,8 @@ FileResponse DirectoryLister::generateDirectoryListing(const std::string& direct
 	if (dir == NULL)
 	{
 		response.status_code = 404;
-		response.body = "Directory not found";
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 

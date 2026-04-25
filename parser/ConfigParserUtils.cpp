@@ -222,8 +222,8 @@ void ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 				location.allowed_methods.push_back(method);
 		}
 		
-		if (location.allowed_methods.empty())
-			throw std::runtime_error("allowed_methods cannot be empty");
+		// if (location.allowed_methods.empty())
+		// 	throw std::runtime_error("allowed_methods cannot be empty");
 		
 		expectToken(";");
 	}

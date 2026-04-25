@@ -1,7 +1,6 @@
 #ifndef DIRECTORYLISTER_HPP
 #define DIRECTORYLISTER_HPP
 
-#include "../router/Router.hpp"
 #include "FileHandler.hpp"
 #include "../parser/ConfigParser.hpp"
 #include <dirent.h>

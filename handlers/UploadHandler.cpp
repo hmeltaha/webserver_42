@@ -1,7 +1,6 @@
 #include "UploadHandler.hpp"
 #include "../utils/MethodValidator.hpp"
 
-// Orthodox Canonical Form
 
 UploadHandler::UploadHandler() {
 }
@@ -59,7 +58,7 @@ bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
 
 	if (stat(path.c_str(), &st) == 0)
 		return(S_ISDIR(st.st_mode));
-	if (mkdir(path.c_str(), 0755)) //0755 = rwxr-xr-x
+	if (mkdir(path.c_str(), 0755) == 0) //0755 = rwxr-xr-x
 		return true;
 	if (errno == ENOENT) //parent doesnt exist
 	{
@@ -106,7 +105,7 @@ std::string UploadHandler::resolveCollision(const std::string& path)//for duplic
 	}
 }
 
-FileResponse UploadHandler::handleUpload(const Request& request, const LocationConfig& location, const ServerConfig& server)
+FileResponse UploadHandler::handleUpload(const HttpRequest& request, const LocationConfig& location, const ServerConfig& server)
 {
 	FileResponse response;
 
@@ -114,23 +113,33 @@ FileResponse UploadHandler::handleUpload(const Request& request, const LocationC
 	if (!validator.isMethodAllowed("POST", location.allowed_methods))
 	{
 		response.status_code = 405;//method not allowed
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 
 	if (location.upload_path.empty())
 	{
 		response.status_code = 500;
+		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 
-	if (request.content_length > server.client_max_body_size)
+	size_t content_length = 0;
+	std::map<std::string, std::string>::const_iterator cl_it = request.headers.find("content-length");
+	if (cl_it != request.headers.end())
+    	content_length = static_cast<size_t>(std::atoi(cl_it->second.c_str()));
+	if (content_length > server.client_max_body_size)
 	{
 		response.status_code = 413;//payload too large
+		response.body = "<html><body><h1>413 Payload Too Large</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 
-	std::map<std::string, std::string>::const_iterator it = request.header.find("Content-Disposition");
-	std::string content_disposition = (it != request.header.end()) ? it->second : "";
+	std::map<std::string, std::string>::const_iterator it = request.headers.find("content-disposition");
+	std::string content_disposition = (it != request.headers.end()) ? it->second : "";
 	std::string filename = extractFilename(content_disposition);
 
 	std::string sanitized = sanitizeFilename(filename);
@@ -142,6 +151,8 @@ FileResponse UploadHandler::handleUpload(const Request& request, const LocationC
 	if (!createDirectoryIfNeeded(location.upload_path))
 	{
 		response.status_code = 500;
+		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 
@@ -149,6 +160,8 @@ FileResponse UploadHandler::handleUpload(const Request& request, const LocationC
 	if (!file.is_open())
 	{
 		response.status_code = 500;
+		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 	file.write(request.body.c_str(), request.body.length());

@@ -40,7 +40,7 @@ std::string FileHandler::getMimeType(const std::string& extension)
 		mime_type [".png"] = "image/png"; 
 		mime_type [".gif"] = "image/gif";
 		mime_type [".svg"] = "image/svg+xml";
-		mime_type [".ico"] = "image?x-icon";
+		mime_type [".ico"] = "image/x-icon";
 
 		mime_type [".pdf"] = "application/pdf"; 
 		mime_type [".json"] = "application/json"; 
@@ -64,14 +64,16 @@ FileResponse FileHandler::serveFile(const std::string& file_path)
 	if (stat(file_path.c_str(), &file_info) != 0)
 	{
 		response.status_code = 404;
-		response.body = "Not Found";
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+		response.mime_type = "text/html";
 		return response;
 	}
 	
 	if (!S_ISREG(file_info.st_mode))
 	{
 		response.status_code = 403;
-		response.body = "Forbidden";
+		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    	response.mime_type = "text/html";
 		return response;
 	}
 

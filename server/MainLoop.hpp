@@ -11,6 +11,8 @@
 #include "../requests/HttpRequest.hpp"
 #include "../requests/RequestParser.hpp"
 #include "../signals/SignalHandler.hpp"
+#include "../handlers/FileHandler.hpp"
+#include "../router/Router.hpp"
 
 
 #define MAX_EVENTS 2000

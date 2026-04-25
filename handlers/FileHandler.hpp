@@ -4,19 +4,10 @@
 #include "ConfigParser.hpp"
 #include "LocationConfig.hpp"
 #include "ServerConfig.hpp"
-#include "../router/Router.hpp"
+#include "../requests/HttpRequest.hpp"
 #include <sys/stat.h>
 #include <map>
-
-struct FileResponse
-{
-	int status_code;
-	std::string mime_type;
-	std::string body;
-	size_t content_length;
-
-	FileResponse():status_code(500), content_length(0){}
-};
+#include "../handlers/FileResponse.hpp"
 
 class FileHandler
 {

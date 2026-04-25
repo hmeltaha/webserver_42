@@ -20,6 +20,8 @@ MethodValidator::~MethodValidator() {
 
 bool MethodValidator::isMethodAllowed(const std::string& method, const std::vector<std::string>& allowed_methods)
 {
+	if (allowed_methods.empty())
+    	return true;
 	bool found = false;
 	for (size_t i = 0; i < allowed_methods.size(); i++)
 	{

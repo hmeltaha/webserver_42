@@ -81,13 +81,13 @@ std::string Router::resolveIndex(const std::string& directory_path, const Locati
 std::string Router::resolvePath(const std::string& uri, const LocationConfig& location , const ServerConfig& server)
 {
 	std::string root;
-	if (!location.root.empty())
-		root = location.root;
-	else if (!server.root.empty())
-		root = server.root;
-	else
-		root = "";
 	
+	if (!location.root.empty())
+    	root = location.root;
+	else if (!server.root.empty())
+    	root = server.root;
+	else
+    	root = "";
 	std::string relative_path;
 	if (uri.length() > location.path.length())
 		relative_path = uri.substr(location.path.length());
@@ -152,3 +152,104 @@ std::string Router::normalizePath(const std::string& path)
 	return res;
 }
 
+bool Router::isDirectory(const std::string& path) const
+{
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0)
+        return false;
+    return S_ISDIR(info.st_mode);
+}
+
+FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
+{
+	
+	FileResponse response;
+	
+	const LocationConfig *location = findMatchingLocation(request.path, server);
+	if (location == NULL)
+	{
+		response.status_code = 404;
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+		response.mime_type = "text/html";
+		return response;
+	}
+	
+	if (!location->redirect.empty())
+	{
+		response.status_code = 301;
+		response.mime_type = "text/html";
+		response.body = location->redirect;
+		return response;
+	}
+
+
+	MethodValidator validator;
+	if (!validator.isMethodAllowed(request.method, location->allowed_methods))
+	{
+		response.status_code = 405;
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		response.mime_type = "text/html";
+		return response;
+	}
+	
+	if (request.method == "POST" && !location->upload_path.empty())
+	{
+		UploadHandler upload;
+		return upload.handleUpload(request, *location, server);
+	}
+	std::string path = resolvePath(request.path, *location, server);
+	
+	if (isDirectory(path))
+	{
+		std::string index = resolveIndex(path, *location, server);
+		if (!index.empty())
+		{
+			FileHandler handler;
+			return handler.serveFile(index);
+		}
+
+		if (location->autoindex)
+		{
+			DirectoryLister lister;
+			return lister.generateDirectoryListing(path, request.path);
+		}
+		else
+		{
+			response.status_code = 403;
+			response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    		response.mime_type = "text/html";
+    		return response;
+		}
+
+	}
+
+	if (isCGIRequest(path, *location))
+		{
+			response.status_code = 0; //special code
+			response.body = path;
+			return response;
+		}
+
+	if (request.method == "GET")
+	{
+		FileHandler file;
+		return file.serveFile(path);
+	}
+
+	else if (request.method == "POST")
+	{
+		UploadHandler upload;
+		return upload.handleUpload(request, *location, server);
+	}
+
+	else if (request.method == "DELETE")
+	{
+		DeleteHandler del;
+		return del.handleDelete(request, path, *location, server);
+	}
+
+	response.status_code = 405;
+	return response;
+
+
+}
