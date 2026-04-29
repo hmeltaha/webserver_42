@@ -10,6 +10,10 @@ Server::~Server()
 
 }
 
+const ServerConfig& Server::getConfig() const
+{
+	return config; 
+}
 /***
  * inet_addr --> this function convert from the string IP into 
  * 32-bits integer in network byte order

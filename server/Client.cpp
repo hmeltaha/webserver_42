@@ -123,6 +123,8 @@ void Client::addBodyToReq(const std::string& buff)
 	{
 		this->reqBuff += body;
 		state = PROCESSING;
+		std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
+		std::cout << "\"" << buff << "\"" << std::endl;
 	}
 }
 

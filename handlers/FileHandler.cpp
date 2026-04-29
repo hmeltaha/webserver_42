@@ -7,6 +7,7 @@ FileHandler::FileHandler(const FileHandler& o)
 {
 	(void)o;
 }
+
 FileHandler &FileHandler::operator=(const FileHandler& o)
 {
 	(void)o;
@@ -56,6 +57,7 @@ std::string FileHandler::getMimeType(const std::string& extension)
 		return it->second;
 	return "application/octet-stream";//unknown default
 }
+
 FileResponse FileHandler::serveFile(const std::string& file_path)
 {
 	FileResponse response;

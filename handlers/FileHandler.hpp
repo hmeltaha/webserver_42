@@ -18,7 +18,7 @@ class FileHandler
 		~FileHandler();
 
 		FileResponse serveFile(const std::string& file_path);
-	
+		
 	private:
 		std::string getFileExtension(const std::string& path);
 		std::string getMimeType(const std::string& extension);

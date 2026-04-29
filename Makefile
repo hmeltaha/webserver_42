@@ -14,7 +14,8 @@ SRCS = main.cpp parser/ConfigParser.cpp \
     handlers/UploadHandler.cpp \
     handlers/DeleteHandler.cpp \
     router/Router.cpp \
-    utils/MethodValidator.cpp 
+    utils/MethodValidator.cpp \
+	response/HttpResponse.cpp \
 
 OBJS = $(SRCS:.cpp=.o)
 

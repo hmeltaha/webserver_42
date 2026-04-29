@@ -4,6 +4,7 @@
 #include <string>
 #include "../requests/HttpRequest.hpp"
 #include "../requests/RequestParser.hpp"
+#include "../response/HttpResponse.hpp"
 #include "Server.hpp"
 
 enum ClientState
@@ -18,17 +19,20 @@ class Client
 {
 	private:
 		int clientFd;
-		std::string reqBuff;
+		int len_body;
 		bool headersReceived; //remove it later
+		std::string reqBuff;
 		std::string resBuff;
 		ClientState state;
-		int len_body;
 		std::string body;
 		
 		
 		public:
 			HttpRequest req;		// private or public ???????????????
 			RequestParser parser;	// private or public ???????????????
+			HttpResponse res;		// private or public ???????????????
+
+
 			Client();
 			Client(int fd);
 			Client(const Client& other);

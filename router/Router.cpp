@@ -160,9 +160,10 @@ bool Router::isDirectory(const std::string& path) const
     return S_ISDIR(info.st_mode);
 }
 
+
+
 FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
 {
-	
 	FileResponse response;
 	
 	const LocationConfig *location = findMatchingLocation(request.path, server);

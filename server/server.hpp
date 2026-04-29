@@ -21,18 +21,15 @@ class Server
 	private:
 		ServerConfig config;
 		int serverFd;
-		// address server_address;
 		sockaddr_in address;
 		int index;
 	public:
 		Server(const ServerConfig& config, int index);
 		~Server();
-		// void start();
 		int getSocketFd() const;
 		int getIndex() const;
 		void setSockets();
-		// void closeServerSocket();
-		// void serverLoop();
+		const ServerConfig& getConfig() const;
 };
 
 #endif

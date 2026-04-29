@@ -24,11 +24,11 @@ void MainLoop::addNewClients(int fd)
 		int clientFd = accept(fd, NULL, NULL);
 		if (clientFd == -1)
 		{
-			if (errno == EAGAIN) // no more client are witting right now. i accept all client for now.
+			if (errno == EAGAIN || errno == EWOULDBLOCK) // no more client are witting right now. i accept all client for now.
 				break;
 			throw std::runtime_error(strerror(errno));
 		}
-		std::cout << "Accept new client....." << std::endl;
+		// std::cout << "Accept new client....." << std::endl;
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		if (flags == -1)
 			throw std::runtime_error(strerror(errno));
@@ -52,7 +52,7 @@ void MainLoop::handleClientEpollIn(int fd)
 	{
 		if (flag == -1)
 		{
-			if (errno == EAGAIN)
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				return;
 		}
 		close (fd);
@@ -61,17 +61,20 @@ void MainLoop::handleClientEpollIn(int fd)
 	}
 	buff[flag] = '\0';
 	clients[fd].setState(READING);
-	std::cout << buff << std::endl;
 	//if the req have a body "Content-Length"
 	clients[fd].addToReqBuff(buff);
 	if (clients[fd].getState() == READING_BODY)
 		clients[fd].addBodyToReq(buff);
-	// std::cout << "Received request:\n" << clients[fd].getReqBuff() << std::endl;
-	
 	if (clients[fd].getState() == PROCESSING)
 	{
-		
+			
+		std::cout << buff << std::endl;
+		// clients[fd].setReqBuff(buff);
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
+		
+		Router router;
+		clients[fd].res.response = router.route
+			(clients[fd].req, servers[clients[fd].getClientFd() % servers.size()].getConfig());
 		
 		////////////////////////////////////////////////////////
 		std::cout << "Method: " << clients[fd].req.method << std::endl;
@@ -83,24 +86,14 @@ void MainLoop::handleClientEpollIn(int fd)
 		{
 			std::cout << it->first << " -> " << it->second << std::endl;
 		}
-		std::cout << std::endl << "just for testing" << std::endl;
-		std::string response =
-				"HTTP/1.1 200 OK\r\n"
-				"Content-Length: 12\r\n"
-				"Connection: close\r\n"
-				"\r\n"
-				"hi from heba";
-				std::cout << response;
-			clients[fd].setResBuff(response);
 		////////////////////////////////////////////////////////
-		/**
-		 * parse the request and routing then (hala and nora)
-		 * generate the response then
-		 * send response
-		 */
-		
+
+
+
+
+		clients[fd].setResBuff(clients[fd].res.getHeaders());
+
 		clients[fd].setState(WRITING);
-		// clients[fd].setResBuff(response);
 		struct epoll_event ev;
 		ev.events = EPOLLOUT ;
 		ev.data.fd = fd;
@@ -135,7 +128,12 @@ void MainLoop::createEpoll()
 	}
 }
 
-void MainLoop::handleClientEpollOut(int fd)
+
+/**
+ * 
+ * if the connection fail (EAGAIN or EWOULDBLOCK) --> do nothing and wait for the next EPOLLIN event to try again.
+ */
+void MainLoop::handleClientEpollOut(int fd) 
 {
 	// std::cout << "enter the epollout " << std::endl;
 	std::string res = clients[fd].getResBuff();
@@ -143,6 +141,8 @@ void MainLoop::handleClientEpollOut(int fd)
 	// std::cout << "Sent response:\n" << res << std::endl;
 	if (sent == -1)
 	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
 		close(fd);
 		return;
 	}
@@ -198,8 +198,8 @@ void MainLoop::closeFds()
 {
 	for (size_t i = 0; i < servers.size(); i++)
 		close(servers[i].getSocketFd());
-	for (size_t i = 0; i < clients.size(); i++)
-		close(clients[i].getClientFd());
+	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+		close(it->first);
 	clients.clear();
 	close(epollFD);
 }

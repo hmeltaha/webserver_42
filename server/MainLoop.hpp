@@ -13,6 +13,8 @@
 #include "../signals/SignalHandler.hpp"
 #include "../handlers/FileHandler.hpp"
 #include "../router/Router.hpp"
+#include "../handlers/FileResponse.hpp"
+#include "../response/HttpResponse.hpp"
 
 
 #define MAX_EVENTS 2000
