@@ -69,7 +69,6 @@ void MainLoop::handleClientEpollIn(int fd)
 	{
 			
 		std::cout << buff << std::endl;
-		// clients[fd].setReqBuff(buff);
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 		
 		Router router;
@@ -77,29 +76,24 @@ void MainLoop::handleClientEpollIn(int fd)
 			(clients[fd].req, servers[clients[fd].getClientFd() % servers.size()].getConfig());
 		
 		////////////////////////////////////////////////////////
-		std::cout << "Method: " << clients[fd].req.method << std::endl;
-		std::cout << "Path: " << clients[fd].req.path << std::endl;
-		std::cout << "Version: " << clients[fd].req.version << std::endl;
+		// std::cout << "Method: " << clients[fd].req.method << std::endl;
+		// std::cout << "Path: " << clients[fd].req.path << std::endl;
+		// std::cout << "Version: " << clients[fd].req.version << std::endl;
 
-		for (std::map<std::string, std::string>::iterator it = clients[fd].req.headers.begin();
-			it != clients[fd].req.headers.end(); ++it)
-		{
-			std::cout << it->first << " -> " << it->second << std::endl;
-		}
+		// for (std::map<std::string, std::string>::iterator it = clients[fd].req.headers.begin();
+		// 	it != clients[fd].req.headers.end(); ++it)
+		// {
+		// 	std::cout << it->first << " -> " << it->second << std::endl;
+		// }
 		////////////////////////////////////////////////////////
 
-
-
-
 		clients[fd].setResBuff(clients[fd].res.getHeaders());
-
 		clients[fd].setState(WRITING);
 		struct epoll_event ev;
 		ev.events = EPOLLOUT ;
 		ev.data.fd = fd;
 		if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
 			throw std::runtime_error(strerror(errno));
-		// std::cout << "changing the event to epolout: " << fd << std::endl;
 	}
 }
 
@@ -128,31 +122,34 @@ void MainLoop::createEpoll()
 	}
 }
 
-
 /**
  * 
  * if the connection fail (EAGAIN or EWOULDBLOCK) --> do nothing and wait for the next EPOLLIN event to try again.
  */
 void MainLoop::handleClientEpollOut(int fd) 
 {
-	// std::cout << "enter the epollout " << std::endl;
-	std::string res = clients[fd].getResBuff();
-	int sent = send(fd, res.c_str(), res.size(), 0);
-	// std::cout << "Sent response:\n" << res << std::endl;
+	std::string& res = clients[fd].getResBuff();
+	size_t remaining = res.size() -  clients[fd].getBytesSend();
+	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);
+	int sent = send(fd, res.c_str() + clients[fd].getBytesSend() , to_send, 0);
+	
+	std::cout << "Sent chunk of " << sent << " bytes" << std::endl;
 	if (sent == -1)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return;
 		close(fd);
+		clients.erase(fd);
 		return;
 	}
-	res.erase(0, sent);
-	if (res.empty())
+	clients[fd].setBytesSend(clients[fd].getBytesSend() + sent);
+	if (clients[fd].getBytesSend() >= res.size())
 	{
 		close(fd);
 		clients.erase(fd);
 	}
 }
+
 
 /**
  * EPOLLIN -->  جديد حاول الاتصال بالسيرفر Client

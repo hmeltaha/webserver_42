@@ -30,7 +30,7 @@ const LocationConfig* Router::findMatchingLocation(const std::string& uri, const
 		{
 			if (uri.substr(0, location_path.length()) == location_path)
 			{
-				if (uri.length() == location_path.length() || 
+				if (location_path == "/" || uri.length() == location_path.length() || 
 				    uri[location_path.length()] == '/')
 				{
 					size_t match_length = location_path.length();
