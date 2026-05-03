@@ -1,0 +1,136 @@
+#include "Client.hpp"
+
+Client::Client(/* args */)
+{
+	clientFd = -1;
+	reqBuff = "";
+	state = READING;
+	len_body = 0;
+	body = "";
+	bytes_send = 0;
+}
+
+Client::~Client()
+{
+}
+
+Client::Client(int fd) : clientFd(fd)
+{
+	body = "";
+	len_body = 0;
+	reqBuff = "";
+	state = READING;
+	bytes_send = 0;
+}
+
+Client::Client(const Client& other) 
+{
+	this->clientFd = other.clientFd;
+	this->reqBuff = other.reqBuff;
+	this->state = other.state;
+	this->bytes_send = 0;
+}
+
+Client& Client::operator=(const Client& other)
+{
+	if (this != &other)
+	{
+		this->clientFd = other.clientFd;
+		this->reqBuff = other.reqBuff;
+		this->state = other.state;
+		this->bytes_send = 0;
+	}
+	return *this;
+}
+
+
+int Client::getClientFd() const
+{
+	return clientFd;
+}
+
+void Client::setClientFd(int fd)
+{
+	this->clientFd = fd;
+}
+
+size_t Client::getBytesSend() const
+{
+	return bytes_send;
+}
+
+void Client::setBytesSend(size_t size)
+{
+	bytes_send = size;
+}
+
+
+void Client::setReqBuff(const std::string& buff)
+{
+	this->reqBuff = buff;
+}
+
+std::string Client::getReqBuff() const
+{
+	return reqBuff;
+}
+
+
+void Client::addToReqBuff(const std::string& buff)
+{
+	if (state != READING)
+		return;
+	reqBuff += buff;
+	size_t headerEnd = reqBuff.find("\r\n\r\n");
+	if (headerEnd == std::string::npos)
+		return;
+	size_t pos = reqBuff.find("Content-Length:");
+	if (pos != std::string::npos)
+	{
+		std::string lenStr = reqBuff.substr(pos + 15);
+		size_t start = lenStr.find_first_not_of(" ");
+		size_t end = lenStr.find("\r\n");
+		if (start != std::string::npos)
+			lenStr = lenStr.substr(start, end - start);
+		len_body = std::atoi(lenStr.c_str());
+		state = READING_BODY;
+	}
+	else
+		state = PROCESSING;
+}
+
+void Client::addBodyToReq(const std::string& buff)
+{
+	body += buff;
+	if (static_cast<int>(body.length()) > len_body)
+		body.resize(len_body);
+	if (static_cast<int>(body.length()) >= len_body)
+	{
+		this->reqBuff += body;
+		state = PROCESSING;
+		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
+		// std::cout << "\"" << buff << "\"" << std::endl;
+	}
+}
+
+
+ClientState Client::getState() const
+{
+	return state;
+}
+
+void Client::setState(ClientState newState)
+{
+	this->state = newState;
+}
+
+void Client::setResBuff(const std::string& buff)
+{
+	this->resBuff = buff;
+}
+
+std::string& Client::getResBuff() const
+{
+	return const_cast<std::string&>(resBuff);
+}
+

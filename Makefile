@@ -1,0 +1,38 @@
+NAME = webserv
+CXX = c++
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iparser
+
+SRCS = main.cpp parser/ConfigParser.cpp \
+	parser/ConfigParserUtils.cpp \
+	parser/ServerConfig.cpp parser/LocationConfig.cpp \
+	server/Server.cpp \
+	server/MainLoop.cpp server/Client.cpp \
+	requests/HttpRequest.cpp requests/RequestParser.cpp \
+	signals/SignalHandler.cpp \
+	handlers/FileHandler.cpp \
+    handlers/DirectoryLister.cpp \
+    handlers/UploadHandler.cpp \
+    handlers/DeleteHandler.cpp \
+    router/Router.cpp \
+    utils/MethodValidator.cpp \
+	response/HttpResponse.cpp \
+
+OBJS = $(SRCS:.cpp=.o)
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re
