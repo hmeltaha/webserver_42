@@ -9,7 +9,7 @@
 
 enum ClientState
 {
-	READING,      // --> the start state of the client
+	READING,	  // --> the start state of the client
 	READING_BODY, // --> when i see "Content-Length"
 	PROCESSING,	  // --> when reading the request is done 
 	WRITING		  // --> after reading the body 
