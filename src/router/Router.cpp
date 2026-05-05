@@ -1,4 +1,11 @@
 #include "router/Router.hpp"
+#include "handlers/DeleteHandler.hpp"
+#include "handlers/DirectoryLister.hpp"
+#include "handlers/FileHandler.hpp"
+#include "handlers/UploadHandler.hpp"
+#include "utils/MethodValidator.hpp"
+#include <fstream>
+#include <iterator>
 #include <sstream>
 
 Router::Router(){}
@@ -30,7 +37,7 @@ const LocationConfig* Router::findMatchingLocation(const std::string& uri, const
 		{
 			if (uri.substr(0, location_path.length()) == location_path)
 			{
-				if (uri.length() == location_path.length() || 
+				if (location_path == "/" || uri.length() == location_path.length() || 
 				    uri[location_path.length()] == '/')
 				{
 					size_t match_length = location_path.length();
@@ -151,4 +158,153 @@ std::string Router::normalizePath(const std::string& path)
 	}
 	return res;
 }
+bool Router::isDirectory(const std::string& path) const
+{
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0)
+		return false;
+	return S_ISDIR(info.st_mode);
+}
 
+
+
+FileResponse Router::route(const Request& request, const ServerConfig& server)
+{
+	FileResponse response;
+	
+	const LocationConfig *location = findMatchingLocation(request.uri, server);
+	if (location == NULL)//return to server root
+	{
+		if (server.root.empty())
+			return serveErrorPage(404, server);
+		std::string path = server.root;
+		if (!path.empty() && path[path.size() -1] != '/')
+			path += "/";
+
+		path += server.index;
+		if (!server.index.empty() && fileExists(path) && isRegularFile(path))
+		{
+			FileHandler handler;
+			FileResponse fr = handler.serveFile(path);
+			if (fr.status_code == 404)
+    			return serveErrorPage(404, server);
+			return fr;
+		}
+		return serveErrorPage(404, server);
+
+	}
+	
+	if (!location->redirect.empty())
+	{
+		response.status_code = 301;
+		response.mime_type = "text/html";
+		response.body = location->redirect;
+		return response;
+	}
+
+
+	MethodValidator validator;
+	if (!validator.isMethodAllowed(request.method, location->allowed_methods))
+	{
+		response.status_code = 405;
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		response.mime_type = "text/html";
+		return response;
+	}
+	
+	if (request.method == "POST" && !location->upload_path.empty())
+	{
+		UploadHandler upload;
+		return upload.handleUpload(request, *location, server);
+	}
+	std::string path = resolvePath(request.uri, *location, server);
+	
+	if (isDirectory(path))
+	{
+		std::string index = resolveIndex(path, *location, server);
+		if (!index.empty())
+		{
+			FileHandler handler;
+			FileResponse fr = handler.serveFile(index);
+			if (fr.status_code == 404)
+    			return serveErrorPage(404, server);
+			return fr;
+		}
+
+		if (location->autoindex)
+		{
+			DirectoryLister lister;
+			return lister.generateDirectoryListing(path, request.uri);
+		}
+		else
+			return serveErrorPage(403, server);
+
+	}
+
+	if (isCGIRequest(path, *location))
+		{
+			response.status_code = 0; //special code
+			response.body = path;
+			return response;
+		}
+
+	if (request.method == "GET")
+	{
+		FileHandler file;
+    	FileResponse fr = file.serveFile(path);
+    	if (fr.status_code == 404)
+        	return serveErrorPage(404, server);
+    	return fr;
+	}
+
+	else if (request.method == "POST")
+	{
+		UploadHandler upload;
+		return upload.handleUpload(request, *location, server);
+	}
+
+	else if (request.method == "DELETE")
+	{
+		DeleteHandler del;
+		return del.handleDelete(request, path, *location, server);
+	}
+
+	response.status_code = 405;
+	return response;
+
+
+}
+
+FileResponse Router::serveErrorPage(int code, const ServerConfig& server)
+{
+	FileResponse response;
+	response.status_code = code;
+	response.mime_type = "text/html";
+	std::map<int, std::string>::const_iterator it = server.error_page.find(code);
+	if (it != server.error_page.end())
+	{
+		std::string page_path = server.root;
+		if (!page_path.empty() && page_path[page_path.size()-1] != '/')
+            page_path += "/";
+
+		std::string uri = it->second;
+		if (!uri.empty() && uri[0] == '/')
+    	uri = uri.substr(1);
+		page_path += uri;
+
+		std::ifstream f(page_path.c_str());
+		if (f.good())
+		{
+			std::string content((std::istreambuf_iterator<char>(f)),
+                                 std::istreambuf_iterator<char>());
+            response.body = content;
+            return response;
+		}
+	}
+
+	if (code == 404)
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+    else if (code == 403)
+        response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    return response;
+}
