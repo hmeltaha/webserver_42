@@ -8,10 +8,11 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& o)
 		response = o.response;
 	return *this;
 }
+
 HttpResponse::~HttpResponse() {}
 
 
-void HttpResponse::setResponse(const FileResponse& res) 
+void HttpResponse::setResponse(const FileResponse& res)
 {
 	response = res;
 }
@@ -36,12 +37,12 @@ std::string HttpResponse::getMessage() const
 std::string HttpResponse::getHeaders() const
 {
 	std::ostringstream response_message;
-	response_message << "HTTP/1.1 " << response.status_code << 
+	response_message << "HTTP/1.1 " << response.status_code <<
 		" "<< getMessage() << "\r\n";
 	response_message << "Content-Type: " << response.mime_type << "\r\n";
 	response_message << "Content-Length: " << response.body.size();
 	response_message << "\r\nConnection: close\r\n\r\n";
-	response_message << response.body; 
+	response_message << response.body;
 
 	return response_message.str();
 }
