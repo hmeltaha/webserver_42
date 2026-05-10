@@ -1,6 +1,8 @@
 #include "UploadHandler.hpp"
 #include "../utils/MethodValidator.hpp"
+#include <iterator>
 
+// Orthodox Canonical Form
 
 UploadHandler::UploadHandler() {
 }
@@ -127,20 +129,27 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 	}
 
 	size_t content_length = 0;
-	std::map<std::string, std::string>::const_iterator cl_it = request.headers.find("content-length");
-	if (cl_it != request.headers.end())
-    	content_length = static_cast<size_t>(std::atoi(cl_it->second.c_str()));
+	std::map<std::string, std::string>::const_iterator cl = request.headers.find("content-length");
+	if (cl != request.headers.end())
+    	content_length = static_cast<size_t>(std::atoi(cl->second.c_str()));
+
 	if (content_length > server.client_max_body_size)
 	{
 		response.status_code = 413;//payload too large
 		response.body = "<html><body><h1>413 Payload Too Large</h1></body></html>";
 		response.mime_type = "text/html";
+
 		return response;
 	}
 
+	std::string filename = "";
+
 	std::map<std::string, std::string>::const_iterator it = request.headers.find("content-disposition");
-	std::string content_disposition = (it != request.headers.end()) ? it->second : "";
-	std::string filename = extractFilename(content_disposition);
+	if (it != request.headers.end())
+    	filename = extractFilename(it->second);
+
+	if (filename.empty())
+    	filename = extractFilename(request.body);
 
 	std::string sanitized = sanitizeFilename(filename);
 
@@ -164,7 +173,8 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 		response.mime_type = "text/html";
 		return response;
 	}
-	file.write(request.body.c_str(), request.body.length());
+	std::string content = extractFileContent(request.body);
+	file.write(content.c_str(), content.length());
 	file.close();
 
 	chmod(target_path.c_str(), 0644);//for saftey
@@ -173,4 +183,20 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 	response.body = "";
 	response.content_length = 0;
 	return response;
+}
+
+std::string UploadHandler::extractFileContent(const std::string& body)
+{
+    
+    size_t header_end = body.find("\r\n\r\n");// find end of part headers
+    if (header_end == std::string::npos)
+        return body;
+    
+    size_t content_start = header_end + 4;
+    
+    size_t content_end = body.rfind("\r\n--");
+    if (content_end == std::string::npos || content_end <= content_start)
+        return body.substr(content_start);
+    
+    return body.substr(content_start, content_end - content_start);
 }

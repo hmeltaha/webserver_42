@@ -1,4 +1,6 @@
 #include "Router.hpp"
+#include <fstream>
+#include <iterator>
 #include <sstream>
 
 Router::Router(){}
@@ -81,13 +83,13 @@ std::string Router::resolveIndex(const std::string& directory_path, const Locati
 std::string Router::resolvePath(const std::string& uri, const LocationConfig& location , const ServerConfig& server)
 {
 	std::string root;
-	
 	if (!location.root.empty())
-    	root = location.root;
+		root = location.root;
 	else if (!server.root.empty())
-    	root = server.root;
+		root = server.root;
 	else
-    	root = "";
+		root = "";
+	
 	std::string relative_path;
 	if (uri.length() > location.path.length())
 		relative_path = uri.substr(location.path.length());
@@ -151,13 +153,12 @@ std::string Router::normalizePath(const std::string& path)
 	}
 	return res;
 }
-
 bool Router::isDirectory(const std::string& path) const
 {
-    struct stat info;
-    if (stat(path.c_str(), &info) != 0)
-        return false;
-    return S_ISDIR(info.st_mode);
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0)
+		return false;
+	return S_ISDIR(info.st_mode);
 }
 
 
@@ -166,13 +167,27 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 {
 	FileResponse response;
 	
-	const LocationConfig *location = findMatchingLocation(request.path, server);
-	if (location == NULL)
+	std::string normalized = normalizePath(request.path);
+	const LocationConfig *location = findMatchingLocation(normalized, server);
+	if (location == NULL)//return to server root
 	{
-		response.status_code = 404;
-		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
-		response.mime_type = "text/html";
-		return response;
+		if (server.root.empty())
+			return serveErrorPage(404, server);
+		std::string path = server.root;
+		if (!path.empty() && path[path.size() -1] != '/')
+			path += "/";
+
+		path += server.index;
+		if (!server.index.empty() && fileExists(path) && isRegularFile(path))
+		{
+			FileHandler handler;
+			FileResponse fr = handler.serveFile(path);
+			if (fr.status_code == 404)
+    			return serveErrorPage(404, server);
+			return fr;
+		}
+		return serveErrorPage(404, server);
+
 	}
 	
 	if (!location->redirect.empty())
@@ -198,7 +213,7 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 		UploadHandler upload;
 		return upload.handleUpload(request, *location, server);
 	}
-	std::string path = resolvePath(request.path, *location, server);
+	std::string path = resolvePath(normalized, *location, server);
 	
 	if (isDirectory(path))
 	{
@@ -206,21 +221,19 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 		if (!index.empty())
 		{
 			FileHandler handler;
-			return handler.serveFile(index);
+			FileResponse fr = handler.serveFile(index);
+			if (fr.status_code == 404)
+    			return serveErrorPage(404, server);
+			return fr;
 		}
 
 		if (location->autoindex)
 		{
 			DirectoryLister lister;
-			return lister.generateDirectoryListing(path, request.path);
+			return lister.generateDirectoryListing(path, normalized);
 		}
 		else
-		{
-			response.status_code = 403;
-			response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
-    		response.mime_type = "text/html";
-    		return response;
-		}
+			return serveErrorPage(403, server);
 
 	}
 
@@ -234,7 +247,10 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	if (request.method == "GET")
 	{
 		FileHandler file;
-		return file.serveFile(path);
+    	FileResponse fr = file.serveFile(path);
+    	if (fr.status_code == 404)
+        	return serveErrorPage(404, server);
+    	return fr;
 	}
 
 	else if (request.method == "POST")
@@ -253,4 +269,38 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	return response;
 
 
+}
+
+FileResponse Router::serveErrorPage(int code, const ServerConfig& server)
+{
+	FileResponse response;
+	response.status_code = code;
+	response.mime_type = "text/html";
+	std::map<int, std::string>::const_iterator it = server.error_page.find(code);
+	if (it != server.error_page.end())
+	{
+		std::string page_path = server.root;
+		if (!page_path.empty() && page_path[page_path.size()-1] != '/')
+            page_path += "/";
+
+		std::string uri = it->second;
+		if (!uri.empty() && uri[0] == '/')
+    	uri = uri.substr(1);
+		page_path += uri;
+
+		std::ifstream f(page_path.c_str());
+		if (f.good())
+		{
+			std::string content((std::istreambuf_iterator<char>(f)),
+                                 std::istreambuf_iterator<char>());
+            response.body = content;
+            return response;
+		}
+	}
+
+	if (code == 404)
+		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
+    else if (code == 403)
+        response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+    return response;
 }

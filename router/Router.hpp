@@ -26,6 +26,7 @@ class Router
 		std::string resolveIndex(const std::string& directory_path, const LocationConfig& location, const ServerConfig& server) const;
 		bool isCGIRequest(const std::string& file_path, const LocationConfig& location) const;
 		FileResponse route(const HttpRequest &request, const ServerConfig& server);
+		FileResponse serveErrorPage(int code, const ServerConfig& server);
 
 	private:
 		std::string normalizePath(const std::string& path);
