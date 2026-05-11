@@ -1,6 +1,6 @@
 NAME = webserv
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iparser
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iparser -g
 
 SRCS = main.cpp parser/ConfigParser.cpp \
 	parser/ConfigParserUtils.cpp \
@@ -16,6 +16,7 @@ SRCS = main.cpp parser/ConfigParser.cpp \
     router/Router.cpp \
     utils/MethodValidator.cpp \
 	response/HttpResponse.cpp \
+	CGI/CgiHandler.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 

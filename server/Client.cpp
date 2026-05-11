@@ -90,6 +90,7 @@ void Client::addToReqBuff(const std::string& buff)
 		std::string lenStr = reqBuff.substr(pos + 15);
 		size_t start = lenStr.find_first_not_of(" ");
 		size_t end = lenStr.find("\r\n");
+		body = reqBuff.substr(headerEnd + 4);
 		if (start != std::string::npos)
 			lenStr = lenStr.substr(start, end - start);
 		len_body = std::atoi(lenStr.c_str());
@@ -99,18 +100,21 @@ void Client::addToReqBuff(const std::string& buff)
 		state = PROCESSING;
 }
 
+
 void Client::addBodyToReq(const std::string& buff)
 {
 	body += buff;
-	if (static_cast<int>(body.length()) > len_body)
-		body.resize(len_body);
+	// if (static_cast<int>(body.length()) > len_body)
 	if (static_cast<int>(body.length()) >= len_body)
 	{
-		this->reqBuff += body;
+		body.resize(len_body);
+		// this->reqBuff += body;
 		state = PROCESSING;
 		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
 		// std::cout << "\"" << buff << "\"" << std::endl;
 	}
+	std::cout << "body: " << body << std::endl;
+	std::cout << "len_body: " << len_body << std::endl;
 }
 
 

@@ -59,34 +59,26 @@ void MainLoop::handleClientEpollIn(int fd)
 		clients.erase(fd);
 		return;
 	}
-	buff[flag] = '\0';
+	std::string data(buff, flag);
 	clients[fd].setState(READING);
 	//if the req have a body "Content-Length"
-	clients[fd].addToReqBuff(buff);
+	if (clients[fd].getState() == READING)
+		clients[fd].addToReqBuff(data);
 	if (clients[fd].getState() == READING_BODY)
-		clients[fd].addBodyToReq(buff);
+		clients[fd].addBodyToReq(data);
+
+	// std::cout << "reqBuff: " << clients[fd].getReqBuff() << std::endl;
 	if (clients[fd].getState() == PROCESSING)
 	{
 			
 		std::cout << buff << std::endl;
+		std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 		
 		Router router;
 		clients[fd].res.response = router.route
 			(clients[fd].req, servers[clients[fd].getClientFd() % servers.size()].getConfig());
 		
-		////////////////////////////////////////////////////////
-		// std::cout << "Method: " << clients[fd].req.method << std::endl;
-		// std::cout << "Path: " << clients[fd].req.path << std::endl;
-		// std::cout << "Version: " << clients[fd].req.version << std::endl;
-
-		// for (std::map<std::string, std::string>::iterator it = clients[fd].req.headers.begin();
-		// 	it != clients[fd].req.headers.end(); ++it)
-		// {
-		// 	std::cout << it->first << " -> " << it->second << std::endl;
-		// }
-		////////////////////////////////////////////////////////
-
 		clients[fd].setResBuff(clients[fd].res.getHeaders());
 		clients[fd].setState(WRITING);
 		struct epoll_event ev;

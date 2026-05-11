@@ -14,21 +14,21 @@ int main(int ac, char** av)
 		return 1;
 	}
 
-	std::string config_file = av[1];
-	std::cout << "Reading config: " << config_file << std::endl;
-	signal(SIGINT, signalHandler);
-	ConfigParser parser;
 	try
 	{
+		std::string config_file = av[1];
+		// std::cout << "Reading config: " << config_file << std::endl;
+		signal(SIGINT, signalHandler);
+		ConfigParser parser;
 		parser.parse(config_file);
-		std::cout << "Config parsed successfully!" << std::endl;
+		// std::cout << "Config parsed successfully!" << std::endl;
 		const std::vector<ServerConfig>& serv = parser.getServers();
 		MainLoop mainLoop(serv);
 		mainLoop.start();
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error parsing config: " << e.what() << std::endl;
+		std::cerr << "Error : " << e.what() << std::endl;
 		return 1;
 	}
 }

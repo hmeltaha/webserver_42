@@ -21,6 +21,8 @@ std::string HttpResponse::getMessage() const
 {
 	if (response.status_code == 200)
 		return "OK";
+	else if (response.status_code == 201)
+		return "Created";
 	else if (response.status_code == 301)
 		return "Moved Permanently";
 	else if (response.status_code == 403)
@@ -29,6 +31,11 @@ std::string HttpResponse::getMessage() const
 		return "Not Found";
 	else if (response.status_code == 405)
 		return "Method Not Allowed";
+	else if (response.status_code == 413)
+	{
+		// std::cout << "Payload Too Large: " << response.content_length << " bytes" << std::endl;
+		return "Payload Too Large";
+	}
 	else if (response.status_code == 500)
 		return "Internal Server Error";
 	return "Unknown";
@@ -37,7 +44,7 @@ std::string HttpResponse::getMessage() const
 std::string HttpResponse::getHeaders() const
 {
 	std::ostringstream response_message;
-	response_message << "HTTP/1.1 " << response.status_code <<
+	response_message << "HTTP/1.0 " << response.status_code <<
 		" "<< getMessage() << "\r\n";
 	response_message << "Content-Type: " << response.mime_type << "\r\n";
 	response_message << "Content-Length: " << response.body.size();

@@ -1,7 +1,7 @@
 #ifndef MAIN_LOOP_HPP
 #define MAIN_LOOP_HPP
 
-#define CHUNK_SIZE 100
+#define CHUNK_SIZE 1000
 #include "Server.hpp"
 #include <vector>
 #include <sys/epoll.h>
