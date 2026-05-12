@@ -19,6 +19,7 @@ int main(int ac, char** av)
 		std::string config_file = av[1];
 		// std::cout << "Reading config: " << config_file << std::endl;
 		signal(SIGINT, signalHandler);
+		signal(SIGTSTP, signalHandler);
 		ConfigParser parser;
 		parser.parse(config_file);
 		// std::cout << "Config parsed successfully!" << std::endl;

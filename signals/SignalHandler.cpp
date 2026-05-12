@@ -4,8 +4,7 @@
 
 void signalHandler(int sig)
 {
-	(void)sig;
-	if (sig == SIGINT)
+	if (sig == SIGINT || sig == SIGTSTP)
 	{
 		std::cout << std::endl << "Shutting the server down!!!" << std::endl;
 		running = false;

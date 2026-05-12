@@ -70,15 +70,15 @@ void MainLoop::handleClientEpollIn(int fd)
 	// std::cout << "reqBuff: " << clients[fd].getReqBuff() << std::endl;
 	if (clients[fd].getState() == PROCESSING)
 	{
-			
+
 		std::cout << buff << std::endl;
 		std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
-		
+
 		Router router;
 		clients[fd].res.response = router.route
 			(clients[fd].req, servers[clients[fd].getClientFd() % servers.size()].getConfig());
-		
+
 		clients[fd].setResBuff(clients[fd].res.getHeaders());
 		clients[fd].setState(WRITING);
 		struct epoll_event ev;
@@ -96,11 +96,11 @@ void MainLoop::createEpoll()
 	if (epollFD == -1)
 		throw std::runtime_error("Failed to create epoll instance\n");
 	struct epoll_event event;
-	
+
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		// add sockets fds to epoll
-		// EPOLLIN = يوجد شخص يدق الباب if server fd 
+		// EPOLLIN = يوجد شخص يدق الباب if server fd
 		// EPOLLIN = الشخص يتكلم (يرسل request) if client fd
 		int fd = servers[i].getSocketFd();
 		std::cout << "Trying to add server fd: " << fd << std::endl;
@@ -115,16 +115,16 @@ void MainLoop::createEpoll()
 }
 
 /**
- * 
+ *
  * if the connection fail (EAGAIN or EWOULDBLOCK) --> do nothing and wait for the next EPOLLIN event to try again.
  */
-void MainLoop::handleClientEpollOut(int fd) 
+void MainLoop::handleClientEpollOut(int fd)
 {
 	std::string& res = clients[fd].getResBuff();
 	size_t remaining = res.size() -  clients[fd].getBytesSend();
 	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);
 	int sent = send(fd, res.c_str() + clients[fd].getBytesSend() , to_send, 0);
-	
+
 	std::cout << "Sent chunk of " << sent << " bytes" << std::endl;
 	if (sent == -1)
 	{
