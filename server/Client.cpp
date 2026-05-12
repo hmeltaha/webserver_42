@@ -23,7 +23,7 @@ Client::Client(int fd) : clientFd(fd)
 	bytes_send = 0;
 }
 
-Client::Client(const Client& other) 
+Client::Client(const Client& other)
 {
 	this->clientFd = other.clientFd;
 	this->reqBuff = other.reqBuff;
@@ -113,8 +113,6 @@ void Client::addBodyToReq(const std::string& buff)
 		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
 		// std::cout << "\"" << buff << "\"" << std::endl;
 	}
-	std::cout << "body: " << body << std::endl;
-	std::cout << "len_body: " << len_body << std::endl;
 }
 
 

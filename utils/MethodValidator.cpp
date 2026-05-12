@@ -21,7 +21,7 @@ MethodValidator::~MethodValidator() {
 bool MethodValidator::isMethodAllowed(const std::string& method, const std::vector<std::string>& allowed_methods)
 {
 	if (allowed_methods.empty())
-    	return true;
+    	return (method == "GET");
 	bool found = false;
 	for (size_t i = 0; i < allowed_methods.size(); i++)
 	{
@@ -29,7 +29,7 @@ bool MethodValidator::isMethodAllowed(const std::string& method, const std::vect
 		{
 			found = true;
 			break;
-		}	
+		}
 	}
 	if (found)
 		return true;
