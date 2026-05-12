@@ -25,10 +25,14 @@ std::string CgiHandler::find_interpreter(const std::string& script)
         return "";
 
     std::string extension = script.substr(dot);
-    if (extension == ".py")  return "/usr/bin/python3";
-    if (extension == ".php") return "/usr/bin/php-cgi";
-    if (extension == ".pl")  return "/usr/bin/perl";
-    if (extension == ".rb")  return "/usr/bin/ruby";
+    if (extension == ".py")
+		return "/usr/bin/python3";
+    if (extension == ".php")
+		return "/usr/bin/php-cgi";
+    if (extension == ".pl")
+		return "/usr/bin/perl";
+    if (extension == ".rb")
+		return "/usr/bin/ruby";
     return "";
 }
 
@@ -36,7 +40,7 @@ char **CgiHandler::make_env_array(const std::string& method, const std::string& 
                                   const std::string& query, const std::string& body,
                                   const StringMap& extra)
 {
-    std::vector<char *> vars;
+    std::vector<char *> vars; //tmp vectore to hold env vars before converting to char**
 
     vars.push_back(join_key_value("REQUEST_METHOD",method));
     vars.push_back(join_key_value("QUERY_STRING", query));
