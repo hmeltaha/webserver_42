@@ -27,12 +27,12 @@ const LocationConfig* Router::findMatchingLocation(const std::string& uri, const
 	{
 		const LocationConfig& location = server.locations[i];
 		const std::string& location_path = location.path;
-		
+
 		if (uri.length() >= location_path.length())
 		{
 			if (uri.substr(0, location_path.length()) == location_path)
 			{
-				if (location_path == "/" || uri.length() == location_path.length() || 
+				if (location_path == "/" || uri.length() == location_path.length() ||
 				    uri[location_path.length()] == '/')
 				{
 					size_t match_length = location_path.length();
@@ -45,7 +45,7 @@ const LocationConfig* Router::findMatchingLocation(const std::string& uri, const
 			}
 		}
 	}
-	
+
 	return best_match;
 }
 
@@ -89,16 +89,16 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 		root = server.root;
 	else
 		root = "";
-	
+
 	std::string relative_path;
 	if (uri.length() > location.path.length())
 		relative_path = uri.substr(location.path.length());
 	else
 		relative_path = "/";
-	
+
 	if (!relative_path.empty() && relative_path[0] != '/')
 		relative_path = "/" + relative_path;
-	
+
 	std::string filesystem_path = root;
 	if (!filesystem_path.empty() && filesystem_path[filesystem_path.length() - 1] == '/' && relative_path[0] == '/')
 		filesystem_path += relative_path.substr(1);
@@ -107,7 +107,7 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 		filesystem_path += "/" + relative_path;
 	else
 		filesystem_path += relative_path;
-	
+
 	return filesystem_path;
 }
 
@@ -166,7 +166,7 @@ bool Router::isDirectory(const std::string& path) const
 FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
 {
 	FileResponse response;
-	
+
 	std::string normalized = normalizePath(request.path);
 	const LocationConfig *location = findMatchingLocation(normalized, server);
 	if (location == NULL)//return to server root
@@ -189,7 +189,7 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 		return serveErrorPage(404, server);
 
 	}
-	
+
 	if (!location->redirect.empty())
 	{
 		response.status_code = 301;
@@ -202,19 +202,21 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	MethodValidator validator;
 	if (!validator.isMethodAllowed(request.method, location->allowed_methods))
 	{
+		//browser come here and print 405 instead of 413 because method is not allowed before checking payload size
+
 		response.status_code = 405;
-		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+		response.body = "<html><body><h1>405 dddddddddddddd Method Not Allowed</h1></body></html>";
 		response.mime_type = "text/html";
 		return response;
 	}
-	
+
 	if (request.method == "POST" && !location->upload_path.empty())
 	{
 		UploadHandler upload;
 		return upload.handleUpload(request, *location, server);
 	}
 	std::string path = resolvePath(normalized, *location, server);
-	
+
 	if (isDirectory(path))
 	{
 		std::string index = resolveIndex(path, *location, server);

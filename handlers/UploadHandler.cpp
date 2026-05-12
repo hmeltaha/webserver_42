@@ -43,10 +43,10 @@ std::string UploadHandler::sanitizeFilename(std::string& filename)//protection f
 	size_t dots_pos;
 	while ((dots_pos = filename.find("..")) != std::string::npos)
 		filename.erase(dots_pos, 2);
-	
+
 	if (filename.length() > 255)
 		filename = filename.substr(0, 255);
-	
+
 	if (filename.empty())
 		filename = "unnamed";
 
@@ -65,7 +65,7 @@ bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
 	if (errno == ENOENT) //parent doesnt exist
 	{
 		size_t last_slash = path.find_last_of('/');
-        if (last_slash != std::string::npos) 
+        if (last_slash != std::string::npos)
 		{
             std::string parent = path.substr(0, last_slash);
       		if (createDirectoryIfNeeded(parent))
@@ -73,7 +73,7 @@ bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
 		}
 	}
 	return false;
-	
+
 }
 
 std::string UploadHandler::resolveCollision(const std::string& path)//for duplicate files
@@ -135,6 +135,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 	if (content_length > server.client_max_body_size)
 	{
+		std::cout << "Payload too large: " << content_length << " bytes" << std::endl;
 		response.status_code = 413;//payload too large
 		response.body = "<html><body><h1>413 Payload Too Large</h1></body></html>";
 		response.mime_type = "text/html";
@@ -187,16 +188,16 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 std::string UploadHandler::extractFileContent(const std::string& body)
 {
-    
+
     size_t header_end = body.find("\r\n\r\n");// find end of part headers
     if (header_end == std::string::npos)
         return body;
-    
+
     size_t content_start = header_end + 4;
-    
+
     size_t content_end = body.rfind("\r\n--");
     if (content_end == std::string::npos || content_end <= content_start)
         return body.substr(content_start);
-    
+
     return body.substr(content_start, content_end - content_start);
 }

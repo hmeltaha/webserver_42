@@ -15,6 +15,19 @@ MainLoop::~MainLoop()
 {
 
 }
+MainLoop::MainLoop()
+{
+	epollFD = -1;
+}
+
+void MainLoop::setServers(const std::vector<ServerConfig>& configs)
+{
+	for (size_t i = 0; i < configs.size(); ++i)
+	{
+		servers.push_back(Server(configs[i], i));
+		servers[i].setSockets();
+	}
+}
 
 
 void MainLoop::addNewClients(int fd)

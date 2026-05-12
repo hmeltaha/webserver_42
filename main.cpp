@@ -13,23 +13,23 @@ int main(int ac, char** av)
 		std::cout << "No config file provided."<< std::endl;
 		return 1;
 	}
-
+	MainLoop mainLoop;
 	try
 	{
 		std::string config_file = av[1];
-		// std::cout << "Reading config: " << config_file << std::endl;
 		signal(SIGINT, signalHandler);
 		signal(SIGTSTP, signalHandler);
 		ConfigParser parser;
 		parser.parse(config_file);
-		// std::cout << "Config parsed successfully!" << std::endl;
 		const std::vector<ServerConfig>& serv = parser.getServers();
-		MainLoop mainLoop(serv);
+		// MainLoop mainLoop(serv);
+		mainLoop.setServers(serv);
 		mainLoop.start();
 	}
 	catch (const std::exception& e)
 	{
 		std::cerr << "Error : " << e.what() << std::endl;
+		mainLoop.closeFds();
 		return 1;
 	}
 }

@@ -30,13 +30,14 @@ class MainLoop
 		std::map<int, Client> clients;
 		struct epoll_event events[MAX_EVENTS];
 	public:
+		MainLoop();
 		MainLoop(const std::vector<ServerConfig>& configs);
 		~MainLoop();
 		void addNewClients(int fd);
 		void createEpoll();
 		void handleClientEpollIn(int fd);
 		void handleClientEpollOut(int fd);
-
+		void setServers(const std::vector<ServerConfig>& configs);
 		void closeFds();
 		void start();
 };
