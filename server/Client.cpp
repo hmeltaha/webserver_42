@@ -8,19 +8,28 @@ Client::Client(/* args */)
 	len_body = 0;
 	body = "";
 	bytes_send = 0;
+	server_to_connect = -1;
+	payload_too_large = false;
 }
 
 Client::~Client()
 {
 }
 
-Client::Client(int fd) : clientFd(fd)
+Client::Client(int fd, int server_index) : clientFd(fd)
 {
 	body = "";
 	len_body = 0;
 	reqBuff = "";
 	state = READING;
 	bytes_send = 0;
+	server_to_connect = server_index;
+	payload_too_large = false;
+}
+
+int Client::getServerToConnect() const
+{
+	return server_to_connect;
 }
 
 Client::Client(const Client& other)
@@ -29,6 +38,8 @@ Client::Client(const Client& other)
 	this->reqBuff = other.reqBuff;
 	this->state = other.state;
 	this->bytes_send = 0;
+	this->server_to_connect = other.server_to_connect;
+	this->payload_too_large = other.payload_too_large;
 }
 
 Client& Client::operator=(const Client& other)
@@ -39,6 +50,8 @@ Client& Client::operator=(const Client& other)
 		this->reqBuff = other.reqBuff;
 		this->state = other.state;
 		this->bytes_send = 0;
+		this->server_to_connect = other.server_to_connect;
+		this->payload_too_large = other.payload_too_large;
 	}
 	return *this;
 }
@@ -75,8 +88,12 @@ std::string Client::getReqBuff() const
 	return reqBuff;
 }
 
+bool Client::getPayloadTooLarge() const
+{
+	return payload_too_large;
+}
 
-void Client::addToReqBuff(const std::string& buff)
+void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 {
 	if (state != READING && state != READING_BODY)
 		return;
@@ -94,6 +111,12 @@ void Client::addToReqBuff(const std::string& buff)
 		if (start != std::string::npos)
 			lenStr = lenStr.substr(start, end - start);
 		len_body = std::atoi(lenStr.c_str());
+		if (len_body > config.client_max_body_size)
+		{
+			payload_too_large = true;
+			state = PROCESSING;
+			return;
+		}
 		size_t len_of_recv_body = reqBuff.length() - (headerEnd + 4);
 		std::cout << "len_body: " << len_body << std::endl;
 		std::cout << "len_of_recv_body: " << len_of_recv_body << std::endl;

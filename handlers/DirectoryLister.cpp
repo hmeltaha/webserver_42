@@ -21,7 +21,7 @@ static bool compare_entries(const DirEntry& a, const DirEntry& b)
 		return true;
 	if (!a.is_directory && b.is_directory)
 		return false;
-	
+
 	return a.name < b.name;
 }
 
@@ -76,21 +76,21 @@ std::string DirectoryLister::generateHTML(const std::vector<DirEntry> &entries, 
 		if (entry.is_directory)
 			html << "/";
 		html << "</a></td>";
-		
+
 		html << "<td>";
 		if (entry.is_directory)
 			html << "-"; //no size for a directory only files
 		else
 			html << formatSize(entry.size);
 		html << "</td>";
-	
+
 		html << "<td>" << formatTime(entry.modified_time);
-		html << "</tr>\n";	
+		html << "</tr>\n";
 	}
 	html << "</table>\n";
     html << "</body>\n";
     html << "</html>\n";
-    
+
     return html.str();
 }
 std::string DirectoryLister::formatTime(time_t time)//computers store time as timestamp = number of seconds since Jan 1, 1970 (since the unix started)
@@ -123,7 +123,7 @@ FileResponse DirectoryLister::generateDirectoryListing(const std::string& direct
 
 {
 	FileResponse response;
-	
+
 	DIR *dir = opendir(directory_path.c_str());
 	if (dir == NULL)
 	{
@@ -136,7 +136,7 @@ FileResponse DirectoryLister::generateDirectoryListing(const std::string& direct
 	std::vector<DirEntry> entries;
 
 	struct dirent* entry;//system struct for holding info about a dir
-	while ((entry = readdir(dir)) != NULL) 
+	while ((entry = readdir(dir)) != NULL)
 	{
 		std::string name = entry->d_name;
 		if (name == "." || name == "..")
@@ -150,18 +150,18 @@ FileResponse DirectoryLister::generateDirectoryListing(const std::string& direct
 		dir_entry.is_directory = S_ISDIR(file_info.st_mode);
 		dir_entry.size = file_info.st_size;
 		dir_entry.modified_time = file_info.st_mtime;
-		
+
 		entries.push_back(dir_entry);
 	}
 	std::sort(entries.begin(), entries.end(), compare_entries);
 	closedir(dir);
 
 	std::string html = generateHTML(entries, uri);
-	
+
 	response.status_code = 200;
 	response.mime_type = "text/html";
 	response.body = html;
 	response.content_length = html.length();
-	
+
 	return response;
 }

@@ -135,7 +135,6 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 	if (content_length > server.client_max_body_size)
 	{
-		std::cout << "Payload too large: " << content_length << " bytes" << std::endl;
 		response.status_code = 413;//payload too large
 		response.body = "<html><body><h1>413 Payload Too Large</h1></body></html>";
 		response.mime_type = "text/html";
@@ -147,10 +146,10 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 	std::map<std::string, std::string>::const_iterator it = request.headers.find("content-disposition");
 	if (it != request.headers.end())
-    	filename = extractFilename(it->second);
+		filename = extractFilename(it->second);
 
 	if (filename.empty())
-    	filename = extractFilename(request.body);
+		filename = extractFilename(request.body);
 
 	std::string sanitized = sanitizeFilename(filename);
 
@@ -170,7 +169,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 	if (!file.is_open())
 	{
 		response.status_code = 500;
-		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+		response.body = "<html><body><h1>500 dddddddddddddddddd Internal Server Error</h1></body></html>";
 		response.mime_type = "text/html";
 		return response;
 	}

@@ -12,6 +12,7 @@
 #include "../handlers/UploadHandler.hpp"
 #include "../handlers/FileResponse.hpp"
 #include "../handlers/DirectoryLister.hpp"
+#include "../server/Client.hpp"
 
 class Router
 {
@@ -27,6 +28,7 @@ class Router
 		bool isCGIRequest(const std::string& file_path, const LocationConfig& location) const;
 		FileResponse route(const HttpRequest &request, const ServerConfig& server);
 		FileResponse serveErrorPage(int code, const ServerConfig& server);
+		void seeIfPayloadTooLarge(Client client);
 
 	private:
 		std::string normalizePath(const std::string& path);

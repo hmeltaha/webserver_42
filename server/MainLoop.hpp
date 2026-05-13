@@ -2,6 +2,7 @@
 #define MAIN_LOOP_HPP
 
 #define CHUNK_SIZE 1000
+#define MAX_EVENTS 2000
 #include "Server.hpp"
 #include <vector>
 #include <sys/epoll.h>
@@ -18,8 +19,6 @@
 #include "../response/HttpResponse.hpp"
 
 
-#define MAX_EVENTS 2000
-
 extern bool running;
 
 class MainLoop
@@ -28,12 +27,13 @@ class MainLoop
 		int epollFD;
 		std::vector<Server> servers;
 		std::map<int, Client> clients;
+		std::map<int, int> serverTOClient; // to know which client is connected to which server. map server fd to server index in servers vector
 		struct epoll_event events[MAX_EVENTS];
 	public:
 		MainLoop();
 		MainLoop(const std::vector<ServerConfig>& configs);
 		~MainLoop();
-		void addNewClients(int fd);
+		void addNewClients(int fd, int server_index);
 		void createEpoll();
 		void handleClientEpollIn(int fd);
 		void handleClientEpollOut(int fd);

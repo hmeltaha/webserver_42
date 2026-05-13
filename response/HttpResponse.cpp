@@ -32,10 +32,7 @@ std::string HttpResponse::getMessage() const
 	else if (response.status_code == 405)
 		return "Method Not Allowed";
 	else if (response.status_code == 413)
-	{
-		// std::cout << "Payload Too Large: " << response.content_length << " bytes" << std::endl;
-		return "Payload Too Large";
-	}
+			return "Payload Too Large";
 	else if (response.status_code == 500)
 		return "Internal Server Error";
 	return "Unknown";

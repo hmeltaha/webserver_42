@@ -202,10 +202,8 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	MethodValidator validator;
 	if (!validator.isMethodAllowed(request.method, location->allowed_methods))
 	{
-		//browser come here and print 405 instead of 413 because method is not allowed before checking payload size
-
 		response.status_code = 405;
-		response.body = "<html><body><h1>405 dddddddddddddd Method Not Allowed</h1></body></html>";
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
 		response.mime_type = "text/html";
 		return response;
 	}
@@ -305,4 +303,15 @@ FileResponse Router::serveErrorPage(int code, const ServerConfig& server)
     else if (code == 403)
         response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
     return response;
+}
+
+void Router::seeIfPayloadTooLarge(Client client)
+{
+	if (client.getPayloadTooLarge())
+	{
+		client.res.response.status_code = 413;
+		client.res.response.body = "<html><body><h1>413 Payload Too Large</h1></body></html>";
+		client.res.response.mime_type = "text/html";
+		client.setState(WRITING);
+	}
 }

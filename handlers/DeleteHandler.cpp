@@ -22,7 +22,7 @@ DeleteHandler& DeleteHandler::operator=(const DeleteHandler& other) {
 DeleteHandler::~DeleteHandler() {
 }
 
-FileResponse DeleteHandler::handleDelete(const HttpRequest& request, 
+FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
                                           const std::string& file_path,
                                           const LocationConfig& location,
                                           const ServerConfig& server)
@@ -54,9 +54,9 @@ FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
     	response.mime_type = "text/html";
 		return response;
 	}
-	
+
 	char* resolved_file = realpath(file_path.c_str(), NULL);//resolves all symlinks
-	
+
 	std::string root;
 	if (!location.root.empty())
 		root = location.root;
@@ -71,7 +71,7 @@ FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
 			free(resolved_root);
 		response.status_code = 403;
 		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
-    	response.mime_type = "text/html";
+		response.mime_type = "text/html";
 		return response;
 	}
 	std::string file_str(resolved_file);
@@ -96,10 +96,10 @@ FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
 		response.mime_type = "text/html";
 		return response;
 	}
-	
+
 	response.status_code = 204;
 	response.body = "";
 	response.content_length = 0;
-    
+
     return response;
 }

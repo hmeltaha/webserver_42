@@ -24,35 +24,41 @@ class Client
 		std::string resBuff;
 		ClientState state;
 		std::string body;
-		size_t bytes_send; //for sending response in chunks
-		public:
-			HttpRequest req;		// private or public ???????????????
-			RequestParser parser;	// private or public ???????????????
-			HttpResponse res;		// private or public ???????????????
+		size_t bytes_send; //remove it later
+		bool payload_too_large;
 
-			Client();
-			Client(int fd);
-			Client(const Client& other);
-			Client& operator=(const Client& other);
-			~Client();
+	public:
+		HttpRequest req;		// private or public ???????????????
+		RequestParser parser;	// private or public ???????????????
+		HttpResponse res;		// private or public ???????????????
+		int server_to_connect;
 
-			size_t getBytesSend() const;
-			void setBytesSend(size_t size);
+		Client();
+		Client(int fd,  int server_index);
+		Client(const Client& other);
+		Client& operator=(const Client& other);
+		~Client();
 
-			int getClientFd() const;
-			void setClientFd(int fd);
+		int getServerToConnect() const;
 
-			ClientState getState() const;
-			void setState(ClientState newState);
+		size_t getBytesSend() const;
+		void setBytesSend(size_t size);
 
-			void setReqBuff(const std::string& buff);
-			std::string getReqBuff() const;
+		int getClientFd() const;
+		void setClientFd(int fd);
 
-			void setResBuff(const std::string& buff);
-			std::string& getResBuff() const;
+		ClientState getState() const;
+		void setState(ClientState newState);
 
-			void addBodyToReq(const std::string& buff);
-			void addToReqBuff(const std::string& buff);
+		void setReqBuff(const std::string& buff);
+		std::string getReqBuff() const;
+
+		void setResBuff(const std::string& buff);
+		std::string& getResBuff() const;
+
+		void addToReqBuff(const std::string& buff, const ServerConfig& config);
+		bool getPayloadTooLarge() const;
+
 };
 
 

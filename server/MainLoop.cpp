@@ -15,6 +15,7 @@ MainLoop::~MainLoop()
 {
 
 }
+
 MainLoop::MainLoop()
 {
 	epollFD = -1;
@@ -30,7 +31,7 @@ void MainLoop::setServers(const std::vector<ServerConfig>& configs)
 }
 
 
-void MainLoop::addNewClients(int fd)
+void MainLoop::addNewClients(int fd, int server_index)
 {
 	while (true)
 	{
@@ -50,7 +51,7 @@ void MainLoop::addNewClients(int fd)
 		struct epoll_event event;
 		event.events = EPOLLIN;
 		event.data.fd = clientFd;
-		clients[clientFd] = Client(clientFd);
+		clients[clientFd] = Client(clientFd, server_index);
 		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, clientFd, &event) == -1)
 			throw std::runtime_error(strerror(errno));
 	}
@@ -73,13 +74,7 @@ void MainLoop::handleClientEpollIn(int fd)
 		return;
 	}
 	std::string data(buff, flag);
-	//if the req have a body "Content-Length"
-	// if (clients[fd].getState() == READING)
-		clients[fd].addToReqBuff(data);
-	// if (clients[fd].getState() == READING_BODY)
-	// 	clients[fd].addBodyToReq(data);
-
-	// std::cout << "reqBuff: " << clients[fd].getReqBuff() << std::endl;
+	clients[fd].addToReqBuff(data, servers[clients[fd].getServerToConnect()].getConfig());
 	if (clients[fd].getState() == PROCESSING)
 	{
 		std::cout << clients[fd].getReqBuff() << std::endl;
@@ -87,8 +82,11 @@ void MainLoop::handleClientEpollIn(int fd)
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 
 		Router router;
-		clients[fd].res.response = router.route
-			(clients[fd].req, servers[clients[fd].getClientFd() % servers.size()].getConfig());
+		router.seeIfPayloadTooLarge(clients[fd]);
+		if (clients[fd].getState() == PROCESSING)
+			clients[fd].res.response = router.route
+				(clients[fd].req, servers[clients[fd].getServerToConnect()].getConfig());
+		std::cout << "response status code: " << clients[fd].res.response.status_code << std::endl;
 
 		clients[fd].setResBuff(clients[fd].res.getHeaders());
 		clients[fd].setState(WRITING);
@@ -117,11 +115,10 @@ void MainLoop::createEpoll()
 		std::cout << "Trying to add server fd: " << fd << std::endl;
 		event.events = EPOLLIN;
 		event.data.fd = servers[i].getSocketFd();
-		// EPOLL_CTL_ADD -->  إضافة FD جديد للمراقبة
+		serverTOClient[servers[i].getSocketFd()] = i;
+		// EPOLL_CTL_ADD -->  إضافة FD جديد للمراقبة]
 		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) == -1)
-		{
 			throw std::runtime_error(strerror(errno));
-		}
 	}
 }
 
@@ -129,6 +126,7 @@ void MainLoop::createEpoll()
  *
  * if the connection fail (EAGAIN or EWOULDBLOCK) --> do nothing and wait for the next EPOLLIN event to try again.
  */
+
 void MainLoop::handleClientEpollOut(int fd)
 {
 	std::string& res = clients[fd].getResBuff();
@@ -174,7 +172,7 @@ void MainLoop::start()
 		{
 			int fd = events[i].data.fd;
 			if (serverfds.find(fd) != serverfds.end())
-				addNewClients(fd);
+				addNewClients(fd, serverTOClient[fd]);
 			else
 			{
 				if (events[i].events & (EPOLLHUP | EPOLLERR))
