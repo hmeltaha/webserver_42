@@ -78,7 +78,7 @@ std::string Client::getReqBuff() const
 
 void Client::addToReqBuff(const std::string& buff)
 {
-	if (state != READING)
+	if (state != READING && state != READING_BODY)
 		return;
 	reqBuff += buff;
 	size_t headerEnd = reqBuff.find("\r\n\r\n");
@@ -94,27 +94,34 @@ void Client::addToReqBuff(const std::string& buff)
 		if (start != std::string::npos)
 			lenStr = lenStr.substr(start, end - start);
 		len_body = std::atoi(lenStr.c_str());
-		state = READING_BODY;
+		size_t len_of_recv_body = reqBuff.length() - (headerEnd + 4);
+		std::cout << "len_body: " << len_body << std::endl;
+		std::cout << "len_of_recv_body: " << len_of_recv_body << std::endl;
+		if (len_of_recv_body >= len_body)
+			state = PROCESSING;
+		else
+			state = READING_BODY;
 	}
 	else
 		state = PROCESSING;
 }
 
 
-void Client::addBodyToReq(const std::string& buff)
-{
-	body += buff;
-	// if (static_cast<int>(body.length()) > len_body)
-	if (static_cast<int>(body.length()) >= len_body)
-	{
-		body.resize(len_body);
-		// this->reqBuff += body;
-		state = PROCESSING;
-		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
-		// std::cout << "\"" << buff << "\"" << std::endl;
-	}
-}
-
+// void Client::addBodyToReq(const std::string& buff)
+// {
+// 	// body += buff;
+// 	(void)buff;
+// 	if ((body.length()) > len_body)
+// 		body.resize(len_body);
+// 	if ((body.length()) >= len_body)
+// 	{
+// 		// body.resize(len_body);
+// 		// this->reqBuff += body;
+// 		state = PROCESSING;
+// 		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
+// 		// std::cout << "\"" << buff << "\"" << std::endl;
+// 	}
+// }
 
 ClientState Client::getState() const
 {

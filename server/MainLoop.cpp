@@ -73,18 +73,16 @@ void MainLoop::handleClientEpollIn(int fd)
 		return;
 	}
 	std::string data(buff, flag);
-	clients[fd].setState(READING);
 	//if the req have a body "Content-Length"
-	if (clients[fd].getState() == READING)
+	// if (clients[fd].getState() == READING)
 		clients[fd].addToReqBuff(data);
-	if (clients[fd].getState() == READING_BODY)
-		clients[fd].addBodyToReq(data);
+	// if (clients[fd].getState() == READING_BODY)
+	// 	clients[fd].addBodyToReq(data);
 
 	// std::cout << "reqBuff: " << clients[fd].getReqBuff() << std::endl;
 	if (clients[fd].getState() == PROCESSING)
 	{
-
-		std::cout << buff << std::endl;
+		std::cout << clients[fd].getReqBuff() << std::endl;
 		std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 
