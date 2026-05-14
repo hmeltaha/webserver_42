@@ -131,7 +131,17 @@ HttpRequest RequestParser::parse(const std::string& raw_request)
 
     if (line.empty() || !parse_request_line(line, request))
         return request;
-
+// Extract query string from path
+	size_t qpos = request.path.find('?');
+		if (qpos != std::string::npos)
+		{
+		    request.query = request.path.substr(qpos + 1);
+		    request.path  = request.path.substr(0, qpos);
+		}
+		else
+		{
+		    request.query = "";
+		}
     // 2. Headers
     while (std::getline(stream, line))
     {

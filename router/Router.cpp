@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iterator>
 #include <sstream>
+#include "CgiHandler.hpp"
+
 
 Router::Router(){}
 
@@ -239,9 +241,23 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 	if (isCGIRequest(path, *location))
 		{
-			response.status_code = 0; //special code
-			response.body = path;
-			return response;
+		CgiHandler cgi;
+    	CgiResult result = cgi.run(
+    	    request.method,
+    	    path,
+    	    request.query,
+    	    request.body,
+    	    StringMap()
+    	);
+
+    	response.status_code = result.status_code;
+    	response.body = result.body;
+    	// response.headers = result.headers;
+
+    	return response;
+			// response.status_code = 0; //special code
+			// response.body = path;
+			// return response;
 		}
 
 	if (request.method == "GET")
