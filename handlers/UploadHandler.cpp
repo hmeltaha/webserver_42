@@ -51,7 +51,6 @@ std::string UploadHandler::sanitizeFilename(std::string& filename)//protection f
 		filename = "unnamed";
 
 	return filename;
-
 }
 
 bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
@@ -169,7 +168,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 	if (!file.is_open())
 	{
 		response.status_code = 500;
-		response.body = "<html><body><h1>500 dddddddddddddddddd Internal Server Error</h1></body></html>";
+		response.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
 		response.mime_type = "text/html";
 		return response;
 	}
@@ -180,7 +179,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 	chmod(target_path.c_str(), 0644);//for saftey
 
 	response.status_code = 201;//success
-	response.body = "";
+	response.body = "<html><body><h1>201 Created</h1></body></html>";
 	response.content_length = 0;
 	return response;
 }
@@ -188,15 +187,15 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 std::string UploadHandler::extractFileContent(const std::string& body)
 {
 
-    size_t header_end = body.find("\r\n\r\n");// find end of part headers
-    if (header_end == std::string::npos)
-        return body;
+	size_t header_end = body.find("\r\n\r\n");// find end of part headers
+	if (header_end == std::string::npos)
+		return body;
 
-    size_t content_start = header_end + 4;
+	size_t content_start = header_end + 4;
 
-    size_t content_end = body.rfind("\r\n--");
-    if (content_end == std::string::npos || content_end <= content_start)
-        return body.substr(content_start);
+	size_t content_end = body.rfind("\r\n--");
+	if (content_end == std::string::npos || content_end <= content_start)
+		return body.substr(content_start);
 
-    return body.substr(content_start, content_end - content_start);
+	return body.substr(content_start, content_end - content_start);
 }

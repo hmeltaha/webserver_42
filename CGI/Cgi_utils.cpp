@@ -34,6 +34,7 @@ bool CgiHandler::setup_pipes(int in_pipe[2],
                              int out_pipe[2],
                              CgiResult &failure)
 {
+    (void)failure;
     if (pipe(in_pipe) == -1 || pipe(out_pipe) == -1)
     {
         std::cerr << "CGI: pipe() failed: " << strerror(errno) << std::endl;
@@ -191,6 +192,7 @@ CgiResult CgiHandler::finalize_result(pid_t pid, std::string &output, CgiResult 
 
 pid_t CgiHandler::fork_cgi_process(int in_pipe[2], int out_pipe[2], const std::string& script, char **env, CgiResult &failure)
 {
+    (void)failure;
     pid_t pid = fork();
 
     if (pid == -1)

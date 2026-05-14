@@ -129,6 +129,7 @@ void MainLoop::createEpoll()
 
 void MainLoop::handleClientEpollOut(int fd)
 {
+	std::cout << "response: " << clients[fd].getResBuff() << std::endl;
 	std::string& res = clients[fd].getResBuff();
 	size_t remaining = res.size() -  clients[fd].getBytesSend();
 	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);

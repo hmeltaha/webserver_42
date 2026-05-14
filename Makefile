@@ -16,7 +16,8 @@ SRCS = main.cpp parser/ConfigParser.cpp \
     router/Router.cpp \
     utils/MethodValidator.cpp \
 	response/HttpResponse.cpp \
-	CGI/CgiHandler.cpp 
+	CGI/CgiHandler.cpp \
+	CGI/Cgi_utils.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 

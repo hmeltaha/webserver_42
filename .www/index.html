@@ -1,10 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webserv Test Page</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: Arial, sans-serif;
+
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 50px;
+
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+
+            backdrop-filter: blur(10px);
+
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 25px;
+
+            background: white;
+            color: #2a5298;
+
+            text-decoration: none;
+            font-weight: bold;
+
+            border-radius: 30px;
+
+            transition: 0.3s ease;
+        }
+
+        .button:hover {
+            background: #dbe9ff;
+            transform: scale(1.05);
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Welcome to Webserv!</h1>
-    <p>This is the index page served from .www/index.html</p>
+    <div class="container">
+        <h1>🚀 Welcome to Webserv!</h1>
+
+        <p>Your custom HTTP server is running successfully.</p>
+
+        <a href="#" class="button">Explore</a>
+    </div>
 </body>
 </html>
