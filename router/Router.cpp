@@ -117,13 +117,15 @@ bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& lo
 {
 	if (location.cgi_path.empty() || location.cgi_extension.empty())
 		return false;
-
+	
 	size_t dot_pos = file_path.find_last_of('.');
 	if (dot_pos == std::string::npos)
 		return false;
 	std::string extension = file_path.substr(dot_pos);
+	std::cout << "location.cgi_extension: " << location.cgi_extension << ", file extension: " << extension << std::endl;
 	if (extension == location.cgi_extension)
 		return true;
+	std::cout << "1. heree🔥\n";
 	return false;
 }
 
@@ -168,7 +170,6 @@ bool Router::isDirectory(const std::string& path) const
 FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
 {
 	FileResponse response;
-
 	std::string normalized = normalizePath(request.path);
 	const LocationConfig *location = findMatchingLocation(normalized, server);
 	if (location == NULL)//return to server root
@@ -238,9 +239,10 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 			return serveErrorPage(403, server);
 
 	}
-
+	// std::cout << "1. here🔥\n";
 	if (isCGIRequest(path, *location))
 		{
+    // std::cout << "🔥 CGI ENTERED: " << path << std::endl;
 		CgiHandler cgi;
     	CgiResult result = cgi.run(
     	    request.method,
@@ -253,6 +255,7 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
     	response.status_code = result.status_code;
     	response.body = result.body;
     	// response.headers = result.headers;
+    // std::cout << "🔥 CGI FINISHED: " << result.status_code << std::endl;
 
     	return response;
 			// response.status_code = 0; //special code

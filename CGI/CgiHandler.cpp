@@ -1,4 +1,6 @@
 #include "CgiHandler.hpp"
+#include <stdio.h>
+
 
 
 CgiHandler::CgiHandler() {}
@@ -109,11 +111,12 @@ CgiResult CgiHandler::parse_output(const std::string& raw)
 
 CgiResult CgiHandler::run(const std::string& method, const std::string& script, const std::string& query, const std::string& body, const StringMap& extra_env)
 {
+	// printf("CGI: Running script method %s\n",method.c_str());
+
     CgiResult failure = make_failure();
 
     int child_stdin[2];
     int child_stdout[2];
-
     if (!setup_pipes(child_stdin, child_stdout, failure))
         return failure;
 

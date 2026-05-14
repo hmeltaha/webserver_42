@@ -13,6 +13,7 @@ class HttpRequest
 		std::map<std::string, std::string> headers;
 		std::string body;
 		std::string query;
+		std::string uri;
 
 		HttpRequest();
 };
