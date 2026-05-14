@@ -24,27 +24,28 @@ std::string FileHandler::getFileExtension(const std::string& path)
 	return path.substr(dot_pos);
 }
 
+
 std::string FileHandler::getMimeType(const std::string& extension)
 {
 	static std::map<std::string, std::string> mime_type;
-	
+
 	if (mime_type.empty())
 	{
 		mime_type[".html"] = "text/html";
 		mime_type[".htm"] = "text/html";
-		mime_type [".css"] = "text/css"; 
-		mime_type [".js"] = "text/javascript"; 
+		mime_type [".css"] = "text/css";
+		mime_type [".js"] = "text/javascript";
 		mime_type [".txt"] = "text/plain";
 
-		mime_type [".jpg"] = "image/jpeg"; 
+		mime_type [".jpg"] = "image/jpeg";
 		mime_type [".jpeg"] = "image/jpeg";
-		mime_type [".png"] = "image/png"; 
+		mime_type [".png"] = "image/png";
 		mime_type [".gif"] = "image/gif";
 		mime_type [".svg"] = "image/svg+xml";
 		mime_type [".ico"] = "image/x-icon";
 
-		mime_type [".pdf"] = "application/pdf"; 
-		mime_type [".json"] = "application/json"; 
+		mime_type [".pdf"] = "application/pdf";
+		mime_type [".json"] = "application/json";
 		mime_type [".xml"] = "application/xml";
 
 		mime_type [".mp4"] = "video/mp4";
@@ -62,7 +63,7 @@ FileResponse FileHandler::serveFile(const std::string& file_path)
 {
 	FileResponse response;
 	struct stat file_info;
-	
+
 	if (stat(file_path.c_str(), &file_info) != 0)
 	{
 		response.status_code = 404;
@@ -70,7 +71,7 @@ FileResponse FileHandler::serveFile(const std::string& file_path)
 		response.mime_type = "text/html";
 		return response;
 	}
-	
+
 	if (!S_ISREG(file_info.st_mode))
 	{
 		response.status_code = 403;
@@ -95,5 +96,5 @@ FileResponse FileHandler::serveFile(const std::string& file_path)
 	response.body = contents;
 	response.content_length = contents.length();
 
-	return response;	
+	return response;
 }

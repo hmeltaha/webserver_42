@@ -27,10 +27,12 @@ std::string UploadHandler::extractFilename(const std::string& content)
 		return "";
 	pos += 10;
 	size_t end = content.find("\"", pos);
+	if (end == std::string::npos)
+		return "";
 	return content.substr(pos, end - pos);
 }
 
-std::string UploadHandler::sanitizeFilename(std::string& filename)//protection from hacking
+std::string UploadHandler::sanitizeFilename(std::string filename)//protection from hacking
 {
 	size_t slash_pos = filename.find_last_of("/\\");
 	if (slash_pos != std::string::npos)
@@ -143,12 +145,19 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 	std::string filename = "";
 
-	std::map<std::string, std::string>::const_iterator it = request.headers.find("content-disposition");
+	std::map<std::string, std::string>::const_iterator it = request.headers.find("Content-Disposition");
 	if (it != request.headers.end())
 		filename = extractFilename(it->second);
+//this is error
 
 	if (filename.empty())
-		filename = extractFilename(request.body);
+	{
+		std::string uri = request.path;
+		size_t pos = uri.find_last_of('/');
+		if (pos != std::string::npos && pos + 1 < uri.size())
+			filename = uri.substr(pos + 1);
+	}
+		// filename = extractFilename(request.body);
 
 	std::string sanitized = sanitizeFilename(filename);
 

@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iterator>
 #include <sstream>
-#include "CgiHandler.hpp"
+#include "../CGI/CgiHandler.hpp"
 
 
 Router::Router(){}

@@ -53,7 +53,7 @@ static void remove_cr(std::string& line)
         line.erase(line.size() - 1);
 }
 
-// parsing 
+// parsing
 
 bool RequestParser::parse_request_line(const std::string& line, HttpRequest& request)
 {
@@ -130,18 +130,21 @@ HttpRequest RequestParser::parse(const std::string& raw_request)
     remove_cr(line);
 
     if (line.empty() || !parse_request_line(line, request))
+    {
         return request;
+    }
 // Extract query string from path
+
 	size_t qpos = request.path.find('?');
-		if (qpos != std::string::npos)
-		{
-		    request.query = request.path.substr(qpos + 1);
-		    request.path  = request.path.substr(0, qpos);
-		}
-		else
-		{
-		    request.query = "";
-		}
+    if (qpos != std::string::npos)
+    {
+        request.query = request.path.substr(qpos + 1);
+        request.path  = request.path.substr(0, qpos);
+    }
+    else
+    {
+        request.query = "";
+    }
     // 2. Headers
     while (std::getline(stream, line))
     {
