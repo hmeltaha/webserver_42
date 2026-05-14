@@ -24,6 +24,7 @@ class ServerConfig
 		std::map<int,  std::string>error_page;
 		size_t client_max_body_size;
 		std::vector<LocationConfig>locations;
+		std::vector<std::string>allowed_methods;
 		ServerConfig();
 		~ServerConfig();
 };

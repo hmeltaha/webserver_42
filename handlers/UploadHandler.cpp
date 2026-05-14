@@ -77,43 +77,44 @@ bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
 
 }
 
-std::string UploadHandler::resolveCollision(const std::string& path)//for duplicate files
-{
-	if (access(path.c_str(), F_OK) != 0)//if the file doesnt exist
-		return path;
+// std::string UploadHandler::resolveCollision(const std::string& path)//for duplicate files
+// {
+// 	if (access(path.c_str(), F_OK) != 0)//if the file doesnt exist
+// 		return path;
 
-	std::string base;
-	std::string ext;
-	size_t pos = path.find_last_of('.');
-	if (pos != std::string::npos)
-	{
-		base = path.substr(0, pos);
-		ext = path.substr(pos);
-	}
-	else
-	{
-		base = path;
-		ext = "";
-	}
+// 	std::string base;
+// 	std::string ext;
+// 	size_t pos = path.find_last_of('.');
+// 	if (pos != std::string::npos)
+// 	{
+// 		base = path.substr(0, pos);
+// 		ext = path.substr(pos);
+// 	}
+// 	else
+// 	{
+// 		base = path;
+// 		ext = "";
+// 	}
 
-	int counter = 1;
-	while (1)
-	{
-		std::stringstream ss;
-		ss << base << "_" << counter << ext;
-		std::string new_path = ss.str();
-		if (access(new_path.c_str(), F_OK) != 0)
-			return new_path;
-		counter++;
-	}
-}
+// 	int counter = 1;
+// 	while (1)
+// 	{
+// 		std::stringstream ss;
+// 		ss << base << "_" << counter << ext;
+// 		std::string new_path = ss.str();
+// 		if (access(new_path.c_str(), F_OK) != 0)
+// 			return new_path;
+// 		counter++;
+// 	}
+// }
 
 FileResponse UploadHandler::handleUpload(const HttpRequest& request, const LocationConfig& location, const ServerConfig& server)
 {
 	FileResponse response;
 
 	MethodValidator validator;
-	if (!validator.isMethodAllowed("POST", location.allowed_methods))
+	const std::vector<std::string>& methods = !location.allowed_methods.empty()? location.allowed_methods : server.allowed_methods;
+	if (!validator.isMethodAllowed("POST", methods))
 	{
 		response.status_code = 405;//method not allowed
 		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
@@ -145,25 +146,22 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 	std::string filename = "";
 
-	std::map<std::string, std::string>::const_iterator it = request.headers.find("Content-Disposition");
-	if (it != request.headers.end())
-		filename = extractFilename(it->second);
-//this is error
+std::map<std::string, std::string>::const_iterator it = request.headers.find("content-disposition");
+if (it != request.headers.end())
+    filename = extractFilename(it->second);
 
-	if (filename.empty())
-	{
-		std::string uri = request.path;
-		size_t pos = uri.find_last_of('/');
-		if (pos != std::string::npos && pos + 1 < uri.size())
-			filename = uri.substr(pos + 1);
-	}
+if (filename.empty())
+    filename = extractFilename(request.body);
+
+if (filename.empty())
+    filename = "unnamed";
 		// filename = extractFilename(request.body);
 
 	std::string sanitized = sanitizeFilename(filename);
 
 	std::string target_path = location.upload_path + "/" + sanitized;
 
-	target_path = resolveCollision(target_path);
+	// target_path = resolveCollision(target_path);
 
 	if (!createDirectoryIfNeeded(location.upload_path))
 	{
@@ -173,7 +171,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 		return response;
 	}
 
-	std::ofstream file(target_path.c_str(), std::ios::binary);//to save the upload on the disk this is where actually the upload happens
+	std::ofstream file(target_path.c_str(), std::ios::binary | std::ios::trunc);//to save the upload on the disk this is where actually the upload happens
 	if (!file.is_open())
 	{
 		response.status_code = 500;
@@ -182,9 +180,14 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 		return response;
 	}
 	std::string content = extractFileContent(request.body);
-	file.write(content.c_str(), content.length());
-	file.close();
-
+	
+	// file.write(content.c_str(), content.length());
+	// file.close();
+std::cerr << "=== WRITING " << content.length() << " bytes to " << target_path << " ===" << std::endl;
+file.write(content.c_str(), content.length());
+std::cerr << "=== WRITE DONE, good=" << file.good() << " ===" << std::endl;
+file.close();
+std::cerr << "=== FILE CLOSED ===" << std::endl;
 	chmod(target_path.c_str(), 0644);//for saftey
 
 	response.status_code = 201;//success
@@ -195,16 +198,26 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request, const Locat
 
 std::string UploadHandler::extractFileContent(const std::string& body)
 {
+    // Try \r\n\r\n first, fall back to \n\n
+    std::string separator = "\r\n\r\n";
+    size_t header_end = body.find(separator);
+    if (header_end == std::string::npos)
+    {
+        separator = "\n\n";
+        header_end = body.find(separator);
+    }
+    if (header_end == std::string::npos)
+        return body;
 
-	size_t header_end = body.find("\r\n\r\n");// find end of part headers
-	if (header_end == std::string::npos)
-		return body;
+    size_t content_start = header_end + separator.length();
 
-	size_t content_start = header_end + 4;
+    // Try \r\n-- first, fall back to \n--
+    size_t content_end = body.rfind("\r\n--");
+    if (content_end == std::string::npos)
+        content_end = body.rfind("\n--");
 
-	size_t content_end = body.rfind("\r\n--");
-	if (content_end == std::string::npos || content_end <= content_start)
-		return body.substr(content_start);
+    if (content_end == std::string::npos || content_end <= content_start)
+        return body.substr(content_start);
 
-	return body.substr(content_start, content_end - content_start);
+    return body.substr(content_start, content_end - content_start);
 }

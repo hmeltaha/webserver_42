@@ -30,7 +30,7 @@ public:
 private:
     std::string extractFilename(const std::string& content_disposition);
     std::string sanitizeFilename(std::string filename);
-    std::string resolveCollision(const std::string& path);
+    //std::string resolveCollision(const std::string& path);
     bool createDirectoryIfNeeded(const std::string& path);
 	std::string extractFileContent(const std::string& body);
 };

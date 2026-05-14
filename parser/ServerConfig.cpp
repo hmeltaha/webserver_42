@@ -7,7 +7,8 @@ ServerConfig::ServerConfig():
 	index(""),
 	error_page(),
 	client_max_body_size(1048576),  //default: 1MB
-	locations()
+	locations(),
+	allowed_methods()
 {}
 
 ServerConfig::~ServerConfig(){}

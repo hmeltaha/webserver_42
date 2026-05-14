@@ -203,7 +203,8 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 
 	MethodValidator validator;
-	if (!validator.isMethodAllowed(request.method, location->allowed_methods))
+	const std::vector<std::string>& methods = !location->allowed_methods.empty()? location->allowed_methods : server.allowed_methods;
+	if (!validator.isMethodAllowed(request.method, methods))
 	{
 		response.status_code = 405;
 		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";

@@ -99,6 +99,9 @@ void ConfigParser::parseServer(ServerConfig& server)
 	
 	if (server.listen_directives.empty())
 		server.listen_directives.push_back(ListenDirective("0.0.0.0", 80));
+
+	if (server.allowed_methods.empty())
+    	throw std::runtime_error("Server block missing mandatory directive: 'allowed_methods'");
 }
 
 void ConfigParser::parseServerDirective(ServerConfig& server, const std::string& directive)
@@ -144,6 +147,22 @@ void ConfigParser::parseServerDirective(ServerConfig& server, const std::string&
 		std::string page_path = getNextToken();
 		server.error_page[error] = page_path;
 		expectToken(";");
+	}
+	else if (directive == "allowed_methods")
+	{
+		std::vector<std::string> valid_methods;
+		valid_methods.push_back("GET");
+		valid_methods.push_back("POST");
+		valid_methods.push_back("DELETE");
+
+		while (peekToken() != ";")
+		{
+			std::string method = getNextToken();
+			if (std::find(valid_methods.begin(), valid_methods.end(), method) == valid_methods.end())
+				throw std::runtime_error("Invalid HTTP method in server block: " + method);
+			server.allowed_methods.push_back(method);
+		}
+    	expectToken(";");
 	}
 	else
 		throw std::runtime_error("Unknown server directive: " + directive);
