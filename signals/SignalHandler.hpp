@@ -7,5 +7,6 @@
 #include "../server/MainLoop.hpp"
 
 void signalHandler(int sig);
+void addSignals();
 
 #endif

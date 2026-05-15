@@ -129,13 +129,11 @@ void MainLoop::createEpoll()
 
 void MainLoop::handleClientEpollOut(int fd)
 {
-	// std::cout << "response: " << clients[fd].getResBuff() << std::endl;
 	std::string& res = clients[fd].getResBuff();
 	size_t remaining = res.size() -  clients[fd].getBytesSend();
 	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);
 	int sent = send(fd, res.c_str() + clients[fd].getBytesSend() , to_send, 0);
 
-	// std::cout << "Sent chunk of " << sent << " bytes" << std::endl;
 	if (sent == -1)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -188,10 +186,26 @@ void MainLoop::start()
 					handleClientEpollOut(fd);
 			}
 		}
+		checkTimeout();
 	}
 	closeFds();
 }
 
+void MainLoop::checkTimeout()
+{
+	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+	{
+		if (it->second.getState() == PROCESSING)
+		{
+			time_t now = time(NULL);
+			if (difftime(now, it->second.getReqBuff().empty() ? now : now - 1) > 5) // if the client is idle for more than 5 seconds
+			{
+				close(it->first);
+				clients.erase(it);
+			}
+		}
+	}
+}
 
 void MainLoop::closeFds()
 {

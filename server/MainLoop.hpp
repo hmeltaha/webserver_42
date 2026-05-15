@@ -39,6 +39,7 @@ class MainLoop
 		void handleClientEpollOut(int fd);
 		void setServers(const std::vector<ServerConfig>& configs);
 		void closeFds();
+		void checkTimeout();
 		void start();
 };
 

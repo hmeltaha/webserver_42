@@ -2,6 +2,7 @@
 #include "server/Server.hpp"
 #include <iostream>
 #include "server/MainLoop.hpp"
+#include "signals/SignalHandler.hpp"
 #include <signal.h>
 
 bool running = true;
@@ -17,12 +18,10 @@ int main(int ac, char** av)
 	try
 	{
 		std::string config_file = av[1];
-		signal(SIGINT, signalHandler);
-		signal(SIGTSTP, signalHandler);
+		addSignals();
 		ConfigParser parser;
 		parser.parse(config_file);
 		const std::vector<ServerConfig>& serv = parser.getServers();
-		// MainLoop mainLoop(serv);
 		mainLoop.setServers(serv);
 		mainLoop.start();
 	}
