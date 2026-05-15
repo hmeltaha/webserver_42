@@ -170,8 +170,8 @@ bool Router::isDirectory(const std::string& path) const
 FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
 {
 	FileResponse response;
-	// if (BehindTheRoot(request.path))
-	// 	return serveErrorPage(403, server);
+	if (BehindTheRoot(request.path))
+		return serveErrorPage(403, server);
 	std::string normalized = normalizePath(request.path);
 	const LocationConfig *location = findMatchingLocation(normalized, server);
 	if (location == NULL)//return to server root
