@@ -117,7 +117,7 @@ bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& lo
 {
 	if (location.cgi_path.empty() || location.cgi_extension.empty())
 		return false;
-	
+
 	size_t dot_pos = file_path.find_last_of('.');
 	if (dot_pos == std::string::npos)
 		return false;
@@ -170,6 +170,8 @@ bool Router::isDirectory(const std::string& path) const
 FileResponse Router::route(const HttpRequest& request, const ServerConfig& server)
 {
 	FileResponse response;
+	// if (BehindTheRoot(request.path))
+	// 	return serveErrorPage(403, server);
 	std::string normalized = normalizePath(request.path);
 	const LocationConfig *location = findMatchingLocation(normalized, server);
 	if (location == NULL)//return to server root
@@ -179,7 +181,6 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 		std::string path = server.root;
 		if (!path.empty() && path[path.size() -1] != '/')
 			path += "/";
-
 		path += server.index;
 		if (!server.index.empty() && fileExists(path) && isRegularFile(path))
 		{
@@ -334,4 +335,20 @@ void Router::seeIfPayloadTooLarge(Client client)
 		client.res.response.mime_type = "text/html";
 		client.setState(WRITING);
 	}
+}
+
+
+
+// bool Router::isDirectory(const std::string& path) const
+// {
+// 	struct stat info;
+// 	if (stat(path.c_str(), &info) != 0)
+// 		return false;
+// 	return S_ISDIR(info.st_mode);
+// }
+
+bool Router::BehindTheRoot(const std::string& path) const
+{
+	std::cout << "Checking if path is behind the root: " << path << std::endl;
+	return (path.find("..") != std::string::npos);
 }

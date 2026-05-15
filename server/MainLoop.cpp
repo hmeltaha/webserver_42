@@ -77,8 +77,8 @@ void MainLoop::handleClientEpollIn(int fd)
 	clients[fd].addToReqBuff(data, servers[clients[fd].getServerToConnect()].getConfig());
 	if (clients[fd].getState() == PROCESSING)
 	{
-		std::cout << clients[fd].getReqBuff() << std::endl;
-		std::cout << "hi" << std::endl;
+		// std::cout << clients[fd].getReqBuff() << std::endl;
+		// std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 
 		Router router;
@@ -86,7 +86,7 @@ void MainLoop::handleClientEpollIn(int fd)
 		if (clients[fd].getState() == PROCESSING)
 			clients[fd].res.response = router.route
 				(clients[fd].req, servers[clients[fd].getServerToConnect()].getConfig());
-		std::cout << "response status code: " << clients[fd].res.response.status_code << std::endl;
+		// std::cout << "response status code: " << clients[fd].res.response.status_code << std::endl;
 
 		clients[fd].setResBuff(clients[fd].res.getHeaders());
 		clients[fd].setState(WRITING);
@@ -129,13 +129,13 @@ void MainLoop::createEpoll()
 
 void MainLoop::handleClientEpollOut(int fd)
 {
-	std::cout << "response: " << clients[fd].getResBuff() << std::endl;
+	// std::cout << "response: " << clients[fd].getResBuff() << std::endl;
 	std::string& res = clients[fd].getResBuff();
 	size_t remaining = res.size() -  clients[fd].getBytesSend();
 	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);
 	int sent = send(fd, res.c_str() + clients[fd].getBytesSend() , to_send, 0);
 
-	std::cout << "Sent chunk of " << sent << " bytes" << std::endl;
+	// std::cout << "Sent chunk of " << sent << " bytes" << std::endl;
 	if (sent == -1)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)

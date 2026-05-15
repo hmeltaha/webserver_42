@@ -77,36 +77,36 @@ bool UploadHandler::createDirectoryIfNeeded(const std::string& path)
 
 }
 
-// std::string UploadHandler::resolveCollision(const std::string& path)//for duplicate files
-// {
-// 	if (access(path.c_str(), F_OK) != 0)//if the file doesnt exist
-// 		return path;
+std::string UploadHandler::resolveCollision(const std::string& path)//for duplicate files
+{
+	if (access(path.c_str(), F_OK) != 0)//if the file doesnt exist
+		return path;
 
-// 	std::string base;
-// 	std::string ext;
-// 	size_t pos = path.find_last_of('.');
-// 	if (pos != std::string::npos)
-// 	{
-// 		base = path.substr(0, pos);
-// 		ext = path.substr(pos);
-// 	}
-// 	else
-// 	{
-// 		base = path;
-// 		ext = "";
-// 	}
+	std::string base;
+	std::string ext;
+	size_t pos = path.find_last_of('.');
+	if (pos != std::string::npos)
+	{
+		base = path.substr(0, pos);
+		ext = path.substr(pos);
+	}
+	else
+	{
+		base = path;
+		ext = "";
+	}
 
-// 	int counter = 1;
-// 	while (1)
-// 	{
-// 		std::stringstream ss;
-// 		ss << base << "_" << counter << ext;
-// 		std::string new_path = ss.str();
-// 		if (access(new_path.c_str(), F_OK) != 0)
-// 			return new_path;
-// 		counter++;
-// 	}
-// }
+	int counter = 1;
+	while (1)
+	{
+		std::stringstream ss;
+		ss << base << "_" << counter << ext;
+		std::string new_path = ss.str();
+		if (access(new_path.c_str(), F_OK) != 0)
+			return new_path;
+		counter++;
+	}
+}
 
 FileResponse UploadHandler::handleUpload(const HttpRequest& request, const LocationConfig& location, const ServerConfig& server)
 {
@@ -153,15 +153,21 @@ if (it != request.headers.end())
 if (filename.empty())
     filename = extractFilename(request.body);
 
-if (filename.empty())
-    filename = "unnamed";
+	if (filename.empty())
+	{
+		std::string uri = request.path;
+		size_t pos = uri.find_last_of('/');
+		if (pos != std::string::npos && pos + 1 < uri.size())
+			filename = uri.substr(pos + 1);
+	}
+    // filename = "unnamed";
 		// filename = extractFilename(request.body);
 
 	std::string sanitized = sanitizeFilename(filename);
 
 	std::string target_path = location.upload_path + "/" + sanitized;
 
-	// target_path = resolveCollision(target_path);
+	target_path = resolveCollision(target_path);
 
 	if (!createDirectoryIfNeeded(location.upload_path))
 	{
@@ -171,7 +177,7 @@ if (filename.empty())
 		return response;
 	}
 
-	std::ofstream file(target_path.c_str(), std::ios::binary | std::ios::trunc);//to save the upload on the disk this is where actually the upload happens
+	std::ofstream file(target_path.c_str(), std::ios::binary);//to save the upload on the disk this is where actually the upload happens
 	if (!file.is_open())
 	{
 		response.status_code = 500;
@@ -180,14 +186,14 @@ if (filename.empty())
 		return response;
 	}
 	std::string content = extractFileContent(request.body);
-	
+
 	// file.write(content.c_str(), content.length());
 	// file.close();
-std::cerr << "=== WRITING " << content.length() << " bytes to " << target_path << " ===" << std::endl;
-file.write(content.c_str(), content.length());
-std::cerr << "=== WRITE DONE, good=" << file.good() << " ===" << std::endl;
-file.close();
-std::cerr << "=== FILE CLOSED ===" << std::endl;
+	std::cerr << "=== WRITING " << content.length() << " bytes to " << target_path << " ===" << std::endl;
+	file.write(content.c_str(), content.length());
+	std::cerr << "=== WRITE DONE, good=" << file.good() << " ===" << std::endl;
+	file.close();
+	std::cerr << "=== FILE CLOSED ===" << std::endl;
 	chmod(target_path.c_str(), 0644);//for saftey
 
 	response.status_code = 201;//success

@@ -53,7 +53,7 @@ static void remove_cr(std::string& line)
         line.erase(line.size() - 1);
 }
 
-// parsing 
+// parsing
 
 bool RequestParser::parse_request_line(const std::string& line, HttpRequest& request)
 {
