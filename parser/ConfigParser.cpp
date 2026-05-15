@@ -148,6 +148,6 @@ void ConfigParser::printTokens() const
 {
 	for (size_t i = 0; i < tokens.size(); i++)
 	{
-		std::cout << "[" << i << "] " << tokens[i] << std::endl;
+		// std::cout << "[" << i << "] " << tokens[i] << std::endl;
 	}
 }

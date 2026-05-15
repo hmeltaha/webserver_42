@@ -112,7 +112,7 @@ void MainLoop::createEpoll()
 		// EPOLLIN = يوجد شخص يدق الباب if server fd
 		// EPOLLIN = الشخص يتكلم (يرسل request) if client fd
 		int fd = servers[i].getSocketFd();
-		std::cout << "Trying to add server fd: " << fd << std::endl;
+		std::cout << "Adding server fd: " << fd << std::endl;
 		event.events = EPOLLIN;
 		event.data.fd = servers[i].getSocketFd();
 		serverTOClient[servers[i].getSocketFd()] = i;

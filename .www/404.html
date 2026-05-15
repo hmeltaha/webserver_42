@@ -1,10 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>404 Not Found</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>404 - Page Not Found</title>
+
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: Arial, sans-serif;
+		}
+
+		body {
+			height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: linear-gradient(135deg, #1e3c72, #2a5298);
+			color: white;
+			text-align: center;
+		}
+
+		.container {
+			background: rgba(255, 255, 255, 0.1);
+			padding: 50px;
+			border-radius: 20px;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+			max-width: 600px;
+			width: 90%;
+		}
+
+		h1 {
+			font-size: 120px;
+			margin-bottom: 10px;
+			font-weight: bold;
+			letter-spacing: 5px;
+		}
+
+		h2 {
+			font-size: 32px;
+			margin-bottom: 20px;
+		}
+
+		p {
+			font-size: 18px;
+			line-height: 1.6;
+			margin-bottom: 30px;
+			color: #e0e0e0;
+		}
+
+		a {
+			display: inline-block;
+			padding: 15px 30px;
+			background: white;
+			color: #2a5298;
+			text-decoration: none;
+			font-weight: bold;
+			border-radius: 10px;
+			transition: 0.3s ease;
+		}
+
+		a:hover {
+			background: #f0f0f0;
+			transform: scale(1.05);
+		}
+
+		.icon {
+			font-size: 60px;
+			margin-bottom: 20px;
+		}
+	</style>
 </head>
+
 <body>
-	<h1>404 - Page Not Found</h1>
-	<p>The requested resource could not be found on this server.</p>
+	<div class="container">
+		<div class="icon">🚫</div>
+
+		<h1>404</h1>
+
+		<h2>Page Not Found</h2>
+
+		<p>
+			Sorry, the page you are looking for does not exist,
+			has been removed, or is temporarily unavailable.
+		</p>
+
+		<a href="/">Go Back Home</a>
+	</div>
 </body>
 </html>

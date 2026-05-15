@@ -118,8 +118,8 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 			return;
 		}
 		size_t len_of_recv_body = reqBuff.length() - (headerEnd + 4);
-		std::cout << "len_body: " << len_body << std::endl;
-		std::cout << "len_of_recv_body: " << len_of_recv_body << std::endl;
+		// std::cout << "len_body: " << len_body << std::endl;
+		// std::cout << "len_of_recv_body: " << len_of_recv_body << std::endl;
 		if (len_of_recv_body >= len_body)
 			state = PROCESSING;
 		else

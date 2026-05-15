@@ -150,8 +150,8 @@ std::map<std::string, std::string>::const_iterator it = request.headers.find("co
 if (it != request.headers.end())
     filename = extractFilename(it->second);
 
-if (filename.empty())
-    filename = extractFilename(request.body);
+	if (filename.empty())
+    	filename = extractFilename(request.body);
 
 	if (filename.empty())
 	{

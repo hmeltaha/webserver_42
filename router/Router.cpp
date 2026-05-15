@@ -202,7 +202,6 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 		return response;
 	}
 
-
 	MethodValidator validator;
 	const std::vector<std::string>& methods = !location->allowed_methods.empty()? location->allowed_methods : server.allowed_methods;
 	if (!validator.isMethodAllowed(request.method, methods))
@@ -215,6 +214,10 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 	if (request.method == "POST" && !location->upload_path.empty())
 	{
+		// if (location->upload_path == )
+		std::cout << "upload_path: " << location->upload_path << std::endl;
+		std::cout << "path: " << location->path << std::endl;
+
 		UploadHandler upload;
 		return upload.handleUpload(request, *location, server);
 	}
@@ -349,6 +352,6 @@ void Router::seeIfPayloadTooLarge(Client client)
 
 bool Router::BehindTheRoot(const std::string& path) const
 {
-	std::cout << "Checking if path is behind the root: " << path << std::endl;
+	//std::cout << "Checking if path is behind the root: " << path << std::endl;
 	return (path.find("..") != std::string::npos);
 }
