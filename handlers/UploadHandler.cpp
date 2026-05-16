@@ -2,6 +2,7 @@
 #include "../utils/MethodValidator.hpp"
 #include <iterator>
 #include <ctime>
+#include <unistd.h>
 
 UploadHandler::UploadHandler() {}
 UploadHandler::UploadHandler(const UploadHandler& other) { (void)other; }
@@ -67,8 +68,13 @@ std::string UploadHandler::resolveCollision(const std::string& path)
 
 	std::string base;
 	std::string ext;
-	size_t pos = path.find_last_of('.');
-	if (pos != std::string::npos)
+	// Find the last dot, but only in the filename part (after the last /)
+	size_t last_slash = path.find_last_of('/');
+	size_t search_start = (last_slash != std::string::npos) ? last_slash : 0;
+	size_t pos = path.find_last_of('.', path.length());
+
+	// Only treat as extension if the dot is after the last slash
+	if (pos != std::string::npos && pos > search_start)
 	{
 		base = path.substr(0, pos);
 		ext  = path.substr(pos);
@@ -131,9 +137,41 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request,
 
 	std::string filename;
 	std::string target_dir = location.upload_path;
+
+	// Extract nested path from request.path (e.g., /upload/hba/jjj -> hba/jjj)
+	std::string nested_path = "";
+	if (request.path.length() > location.path.length())
+	{
+		nested_path = request.path.substr(location.path.length());
+		if (!nested_path.empty() && nested_path[0] == '/')
+			nested_path = nested_path.substr(1);
+
+		// Remove trailing slash if present
+		if (!nested_path.empty() && nested_path[nested_path.length() - 1] == '/')
+			nested_path = nested_path.substr(0, nested_path.length() - 1);
+	}
+
+	// If nested_path is provided, use it as the target directory/filename
+	if (!nested_path.empty())
+	{
+		// Find the last slash to separate directory from filename
+		size_t last_slash = nested_path.find_last_of('/');
+		if (last_slash != std::string::npos)
+		{
+			// Has nested directories: hba/jjj -> target_dir += /hba, filename = jjj
+			target_dir += "/" + nested_path.substr(0, last_slash);
+			filename = nested_path.substr(last_slash + 1);
+		}
+		else
+		{
+			// Just a filename: jjj -> filename = jjj
+			filename = nested_path;
+		}
+	}
+
 	std::map<std::string, std::string>::const_iterator cd =
 		request.headers.find("content-disposition");
-	if (cd != request.headers.end())
+	if (cd != request.headers.end() && filename.empty())
 		filename = extractFilename(cd->second);
 
 	if (filename.empty())
@@ -142,9 +180,8 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request,
 	filename = sanitizeFilename(filename);
 	if (filename.empty())
 	{
-		std::ostringstream ss;
-		ss << "upload_" << static_cast<long>(time(NULL));
-		filename = ss.str();
+		// Generate default filename with counter: upload_1, upload_2, etc.
+		filename = "upload";
 	}
 
 	if (!createDirectoryIfNeeded(target_dir))
