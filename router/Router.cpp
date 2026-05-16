@@ -93,10 +93,16 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 		root = "";
 
 	std::string relative_path;
-	if (uri.length() > location.path.length())
-		relative_path = uri.substr(location.path.length());
+	if (!location.root.empty())
+	{
+		if (uri.length() > location.path.length())
+			relative_path = uri.substr(location.path.length());
+		else
+			relative_path = "/";
+	}
 	else
-		relative_path = "/";
+		relative_path = uri;
+	//relative_path = uri;
 
 	if (!relative_path.empty() && relative_path[0] != '/')
 		relative_path = "/" + relative_path;
@@ -115,6 +121,10 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 
 bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& location) const
 {
+	std::cout << "cgi_path = [" << location.cgi_path << "]\n";
+std::cout << "cgi_extension = [" << location.cgi_extension << "]\n";
+std::cout << "file_path = [" << file_path << "]\n";
+
 	if (location.cgi_path.empty() || location.cgi_extension.empty())
 		return false;
 
@@ -214,7 +224,6 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 	if (request.method == "POST" && !location->upload_path.empty())
 	{
-		// if (location->upload_path == )
 		std::cout << "upload_path: " << location->upload_path << std::endl;
 		std::cout << "path: " << location->path << std::endl;
 
@@ -352,6 +361,27 @@ void Router::seeIfPayloadTooLarge(Client client)
 
 bool Router::BehindTheRoot(const std::string& path) const
 {
-	//std::cout << "Checking if path is behind the root: " << path << std::endl;
-	return (path.find("..") != std::string::npos);
+
+   std::vector<std::string> stack;
+    std::istringstream stream(path);
+    std::string part;
+
+    while (std::getline(stream, part, '/'))
+    {
+        if (part.empty() || part == ".")
+            continue;
+
+        if (part == "..")
+        {
+            if (stack.empty())
+                return true;
+
+            stack.pop_back();
+        }
+        else
+            stack.push_back(part);
+    }
+
+    return false;
 }
+
