@@ -24,6 +24,7 @@ class Client
 		std::string resBuff;
 		ClientState state;
 		std::string body;
+		time_t start_time;
 		size_t bytes_send; //remove it later
 		bool payload_too_large;
 
@@ -40,6 +41,9 @@ class Client
 		~Client();
 
 		int getServerToConnect() const;
+
+		time_t getStartTime() const;
+		void setStartTime(time_t time);
 
 		size_t getBytesSend() const;
 		void setBytesSend(size_t size);

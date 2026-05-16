@@ -23,6 +23,8 @@ std::string HttpResponse::getMessage() const
 		return "OK";
 	else if (response.status_code == 201)
 		return "Created";
+	else if (response.status_code == 204)
+		return "No Content";
 	else if (response.status_code == 301)
 		return "Moved Permanently";
 	else if (response.status_code == 403)

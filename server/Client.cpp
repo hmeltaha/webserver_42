@@ -25,6 +25,7 @@ Client::Client(int fd, int server_index) : clientFd(fd)
 	bytes_send = 0;
 	server_to_connect = server_index;
 	payload_too_large = false;
+	start_time = time(NULL);
 }
 
 int Client::getServerToConnect() const
@@ -40,6 +41,7 @@ Client::Client(const Client& other)
 	this->bytes_send = 0;
 	this->server_to_connect = other.server_to_connect;
 	this->payload_too_large = other.payload_too_large;
+	start_time = other.start_time;
 }
 
 Client& Client::operator=(const Client& other)
@@ -52,6 +54,7 @@ Client& Client::operator=(const Client& other)
 		this->bytes_send = 0;
 		this->server_to_connect = other.server_to_connect;
 		this->payload_too_large = other.payload_too_large;
+		start_time = other.start_time;
 	}
 	return *this;
 }
@@ -118,8 +121,6 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 			return;
 		}
 		size_t len_of_recv_body = reqBuff.length() - (headerEnd + 4);
-		// std::cout << "len_body: " << len_body << std::endl;
-		// std::cout << "len_of_recv_body: " << len_of_recv_body << std::endl;
 		if (len_of_recv_body >= len_body)
 			state = PROCESSING;
 		else
@@ -129,22 +130,15 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 		state = PROCESSING;
 }
 
+time_t Client::getStartTime() const
+{
+	return start_time;
+}
 
-// void Client::addBodyToReq(const std::string& buff)
-// {
-// 	// body += buff;
-// 	(void)buff;
-// 	if ((body.length()) > len_body)
-// 		body.resize(len_body);
-// 	if ((body.length()) >= len_body)
-// 	{
-// 		// body.resize(len_body);
-// 		// this->reqBuff += body;
-// 		state = PROCESSING;
-// 		// std::cout << "BBBOOOOODDYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" << std::endl;
-// 		// std::cout << "\"" << buff << "\"" << std::endl;
-// 	}
-// }
+void Client::setStartTime(time_t time)
+{
+	this->start_time = time;
+}
 
 ClientState Client::getState() const
 {

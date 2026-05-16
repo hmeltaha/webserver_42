@@ -77,6 +77,7 @@ void MainLoop::handleClientEpollIn(int fd)
 	clients[fd].addToReqBuff(data, servers[clients[fd].getServerToConnect()].getConfig());
 	if (clients[fd].getState() == PROCESSING)
 	{
+		clients[fd].setStartTime(time(NULL));
 		// std::cout << clients[fd].getReqBuff() << std::endl;
 		// std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
@@ -193,17 +194,22 @@ void MainLoop::start()
 
 void MainLoop::checkTimeout()
 {
-	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+	time_t time_now = time(NULL);
+	std::map<int, Client>::iterator it = clients.begin();
+	while	 ( it != clients.end())
 	{
-		if (it->second.getState() == PROCESSING)
+		if (it->second.getState() == READING || it->second.getState() == READING_BODY || it->second.getState() == PROCESSING)
 		{
-			time_t now = time(NULL);
-			if (difftime(now, it->second.getReqBuff().empty() ? now : now - 1) > 5) // if the client is idle for more than 5 seconds
+			if (time_now - it->second.getStartTime() > TIMEOUT)
 			{
 				close(it->first);
-				clients.erase(it);
+				std::map<int, Client>::iterator tmp = it;
+				 ++it;
+				clients.erase(tmp);
+				continue;
 			}
 		}
+		++it;
 	}
 }
 
