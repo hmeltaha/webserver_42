@@ -139,26 +139,6 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request,
 	if (filename.empty())
 		filename = extractFilename(request.body);
 
-	if (filename.empty())
-	{
-		std::string sub_path;
-		if (request.path.length() > location.path.length())
-			sub_path = request.path.substr(location.path.length());
-		if (!sub_path.empty() && sub_path[0] == '/')
-			sub_path = sub_path.substr(1);
-		if (!sub_path.empty())
-		{
-			size_t last_slash = sub_path.find_last_of('/');
-			if (last_slash != std::string::npos)
-			{
-				target_dir += "/" + sub_path.substr(0, last_slash);
-				filename    = sub_path.substr(last_slash + 1);
-			}
-			else
-				filename = sub_path;
-		}
-	}
-
 	filename = sanitizeFilename(filename);
 	if (filename.empty())
 	{

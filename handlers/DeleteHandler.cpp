@@ -60,6 +60,8 @@ FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
 	std::string root;
 	if (!location.root.empty())
 		root = location.root;
+	else if (!location.upload_path.empty())
+		root = location.upload_path;
 	else if (!server.root.empty())
 		root = server.root;
 	char* resolved_root = realpath(root.c_str(), NULL);

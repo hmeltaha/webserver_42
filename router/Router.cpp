@@ -87,13 +87,15 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 	std::string root;
 	if (!location.root.empty())
 		root = location.root;
+	else if (!location.upload_path.empty())
+		root = location.upload_path;
 	else if (!server.root.empty())
 		root = server.root;
 	else
 		root = "";
 
 	std::string relative_path;
-	if (!location.root.empty())
+	if (!location.root.empty() || !location.upload_path.empty())
 	{
 		if (uri.length() > location.path.length())
 			relative_path = uri.substr(location.path.length());
@@ -106,7 +108,7 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 
 	if (!relative_path.empty() && relative_path[0] != '/')
 		relative_path = "/" + relative_path;
-
+	std::cout << "root " << root<< std::endl;
 	std::string filesystem_path = root;
 	if (!filesystem_path.empty() && filesystem_path[filesystem_path.length() - 1] == '/' && relative_path[0] == '/')
 		filesystem_path += relative_path.substr(1);
@@ -115,7 +117,7 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 		filesystem_path += "/" + relative_path;
 	else
 		filesystem_path += relative_path;
-
+	std::cout << "filllleee" <<filesystem_path << std::endl;
 	return filesystem_path;
 }
 
