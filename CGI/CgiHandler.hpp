@@ -14,6 +14,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <limits.h>
 
 typedef std::map<std::string, std::string> StringMap;
 

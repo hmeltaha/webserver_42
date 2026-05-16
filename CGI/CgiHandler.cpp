@@ -17,12 +17,12 @@ std::string CgiHandler::find_interpreter(const std::string& script)
     std::string extension = script.substr(dot);
     if (extension == ".py")
 		return "/usr/bin/python3";
-    if (extension == ".php")
-		return "/usr/bin/php-cgi";
-    if (extension == ".pl")
-		return "/usr/bin/perl";
-    if (extension == ".rb")
-		return "/usr/bin/ruby";
+    // if (extension == ".php")
+	//	return "/usr/bin/php-cgi";
+    // if (extension == ".pl")
+	//	return "/usr/bin/perl";
+    // if (extension == ".rb")
+	//	return "/usr/bin/ruby";
     return "";
 }
 // POST /cgi/test.py?name=hala HTTP/1.1

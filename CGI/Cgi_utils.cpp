@@ -72,9 +72,21 @@ void CgiHandler::run_child(int in_pipe[2], int out_pipe[2], const std::string& s
 
     close_pipes(in_pipe, out_pipe);
 
-    size_t last_slash = script.rfind('/');
+    // Get absolute path before changing directory
+    char abs_path[PATH_MAX];
+    if (!realpath(script.c_str(), abs_path))
+    {
+        std::cerr << "CGI: realpath failed for " << script << ": " << strerror(errno) << std::endl;
+        _exit(1);
+    }
+
+    std::string abs_path_str(abs_path);
+    size_t last_slash = abs_path_str.rfind('/');
     if (last_slash != std::string::npos)
-        chdir(script.substr(0, last_slash).c_str());
+    {
+        std::string script_dir = abs_path_str.substr(0, last_slash);
+        chdir(script_dir.c_str());
+    }
 
     std::string interpreter = find_interpreter(script);
 
@@ -82,12 +94,12 @@ void CgiHandler::run_child(int in_pipe[2], int out_pipe[2], const std::string& s
     if (!interpreter.empty())
     {
         argv[0] = (char*)interpreter.c_str();
-        argv[1] = (char*)script.c_str();
+        argv[1] = abs_path;
         argv[2] = NULL;
     }
     else
     {
-        argv[0] = (char*)script.c_str();
+        argv[0] = abs_path;
         argv[1] = NULL;
     }
 

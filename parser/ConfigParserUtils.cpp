@@ -264,7 +264,7 @@ void ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 		std::string cgi_path = getNextToken();
 		
 		if (extension.empty() || extension[0] != '.')
-			throw std::runtime_error("CGI extension must start with '.' (e.g., .php)");
+			throw std::runtime_error("CGI extension must start with '.' (e.g., .py)");
 		
 		location.cgi_extension = extension;
 		location.cgi_path = cgi_path;
