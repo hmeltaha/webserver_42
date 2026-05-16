@@ -31,7 +31,8 @@ FileResponse DeleteHandler::handleDelete(const HttpRequest& request,
     FileResponse response;
 
     MethodValidator validator;
-	if (!validator.isMethodAllowed("DELETE", location.allowed_methods))
+	const std::vector<std::string>& methods = !location.allowed_methods.empty()? location.allowed_methods : server.allowed_methods;
+	if (!validator.isMethodAllowed("DELETE", methods))
 	{
 		response.status_code = 405;
 		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
