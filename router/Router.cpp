@@ -135,7 +135,7 @@ std::cout << "file_path = [" << file_path << "]\n";
 	std::cout << "location.cgi_extension: " << location.cgi_extension << ", file extension: " << extension << std::endl;
 	if (extension == location.cgi_extension)
 		return true;
-	std::cout << "1. heree🔥\n";
+	// std::cout << "1. heree🔥\n";
 	return false;
 }
 
