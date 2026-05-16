@@ -117,7 +117,7 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 		filesystem_path += "/" + relative_path;
 	else
 		filesystem_path += relative_path;
-	std::cout << "filllleee" <<filesystem_path << std::endl;
+	// std::cout << "filllleee" <<filesystem_path << std::endl;
 	return filesystem_path;
 }
 

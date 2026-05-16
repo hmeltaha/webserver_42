@@ -34,6 +34,7 @@ char **CgiHandler::make_env_array(const std::string& method, const std::string& 
 {
     std::vector<char *> vars; //tmp vectore to hold env vars before converting to char**
 
+	// std::cout << "CGI: Building environment variables for method " << method << ", script " << script << ", query " << query << ", body length " << body.size() << std::endl;
     vars.push_back(join_key_value("REQUEST_METHOD",method));
     vars.push_back(join_key_value("QUERY_STRING", query));
     vars.push_back(join_key_value("SCRIPT_FILENAME",script));
