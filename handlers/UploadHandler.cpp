@@ -143,19 +143,19 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request,
 	{
 		std::string sub_path;
 		if (request.path.length() > location.path.length())
-			sub_path = request.path.substr(location.path.length()); 
+			sub_path = request.path.substr(location.path.length());
 		if (!sub_path.empty() && sub_path[0] == '/')
-			sub_path = sub_path.substr(1); 
+			sub_path = sub_path.substr(1);
 		if (!sub_path.empty())
 		{
 			size_t last_slash = sub_path.find_last_of('/');
 			if (last_slash != std::string::npos)
 			{
-				target_dir += "/" + sub_path.substr(0, last_slash); 
-				filename    = sub_path.substr(last_slash + 1); 
+				target_dir += "/" + sub_path.substr(0, last_slash);
+				filename    = sub_path.substr(last_slash + 1);
 			}
 			else
-				filename = sub_path; 
+				filename = sub_path;
 		}
 	}
 
@@ -195,6 +195,7 @@ FileResponse UploadHandler::handleUpload(const HttpRequest& request,
 
 	response.status_code    = 201;
 	response.body           = "<html><body><h1>201 Created</h1></body></html>";
+	response.mime_type   = "text/html";
 	response.content_length = 0;
 	return response;
 }

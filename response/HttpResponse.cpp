@@ -27,6 +27,8 @@ std::string HttpResponse::getMessage() const
 		return "No Content";
 	else if (response.status_code == 301)
 		return "Moved Permanently";
+	else if (response.status_code == 400)
+		return "Bad Request";
 	else if (response.status_code == 403)
 		return "Forbidden";
 	else if (response.status_code == 404)
