@@ -47,7 +47,8 @@ std::string HttpResponse::getHeaders() const
 	std::ostringstream response_message;
 	response_message << "HTTP/1.0 " << response.status_code <<
 		" "<< getMessage() << "\r\n";
-	response_message << "Content-Type: " << response.mime_type << "\r\n";
+	if (!response.mime_type.empty())
+		response_message << "Content-Type: " << response.mime_type << "\r\n";
 	response_message << "Content-Length: " << response.body.size();
 	response_message << "\r\nConnection: close\r\n\r\n";
 	response_message << response.body;
