@@ -110,42 +110,118 @@ CgiResult CgiHandler::parse_output(const std::string& raw)
     return result;
 }
 
-CgiResult CgiHandler::run(const std::string& method, const std::string& script, const std::string& query, const std::string& body, const StringMap& extra_env)
+
+
+int CgiHandler::startCgi(int clientFd, const std::string& method, const std::string& script,
+			const std::string& query, const std::string& body,
+				const StringMap& extra_env, int epollFD)
 {
-	// printf("CGI: Running script method %s\n",method.c_str());
+	struct stat st;
+	if (stat(script.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+	{
+		std::cerr << "CGI: script not found: " << script << std::endl;
+		return 404;
+	}
 
-    CgiResult failure = make_failure();
+	CgiResult failure = make_failure();
 
-    int child_stdin[2];
-    int child_stdout[2];
+	int child_stdin[2];
+	int child_stdout[2];
     if (!setup_pipes(child_stdin, child_stdout, failure))
-        return failure;
+        return 500;
 
     char **env = build_env(method, script, query, body, extra_env, child_stdin, child_stdout, failure);
     if (!env)
-        return failure;
+        return 500;
 
     pid_t pid = fork_cgi_process(child_stdin, child_stdout, script, env, failure);
     if (pid == -1)
-        return failure;
+        return 500;
 
+// fcntl(pid, F_SETFL, O_NONBLOCK);
     cleanup_env(env);
 
     write_body(child_stdin, body);
     prepare_parent_pipes(child_stdin, child_stdout);
 
-    std::string output;
-    bool timed_out = false;
+	struct epoll_event event;
+	event.events = EPOLLIN | EPOLLET;
+	event.data.fd = child_stdout[0];
+	if (epoll_ctl(epollFD, EPOLL_CTL_ADD, child_stdout[0], &event) == -1)
+	{
+		close(child_stdout[0]);
+        kill(pid, SIGKILL);
+        waitpid(pid, NULL, WNOHANG);
+		std::cerr << "CGI: Failed to add CGI output pipe to epoll: " << strerror(errno) << std::endl;
+		return 500;
+	}
 
-    if (!collect_output(child_stdout[0], pid, output, timed_out))
+	CgiProcess proc;
+	proc.pid = pid;
+	proc.in_fd = child_stdin[1];
+	proc.out_fd = child_stdout[0];
+	proc.start_time = time(NULL);
+	proc.timed_out = false;
+	proc.clientFd = clientFd;
+
+
+	active_processes[child_stdout[0]] = proc;
+	return 0;
+}
+
+bool CgiHandler::handleCgiOutput(int pipeFd, int epollFD,
+					std::map<int, Client>& clients)
+{
+	std::map<int, CgiProcess>::iterator it = active_processes.find(pipeFd);
+	if (it == active_processes.end())
+	{
+		std::cerr << "CGI: Received output from unknown pipe fd " << pipeFd << std::endl;
+		return false;
+	}
+	CgiProcess &proc = it->second;
+	char buffer[4096];
+	ssize_t bytes_read;
+	while ((bytes_read = read(pipeFd, buffer, sizeof(buffer))) > 0)
+    proc.output.append(buffer, bytes_read);
+
+
+	if (bytes_read == -1 && errno != EAGAIN)
+	{
+		std::cerr << "CGI: Error reading from pipe fd " << pipeFd << ": " << strerror(errno) << std::endl;
+		return true;
+	}
+	CgiResult result = parse_output(proc.output);
+	std::ostringstream res;
+    res << "HTTP/1.1 " << result.status_code << " OK\r\n";
+    res << "Content-Length: " << result.body.size() << "\r\n";
+    res << "Content-Type: text/html\r\n";
+    if (!result.headers.empty())
+        res << result.headers;
+    res << "Connection: close\r\n";
+    res << "\r\n";
+    res << result.body;
+
+///////////////////////////
+	   std::map<int, Client>::iterator clientIt = clients.find(proc.clientFd);
+    if (clientIt != clients.end())
     {
-        if (timed_out)
-            return timeout_failure(pid, failure);
+        clientIt->second.setResBuff(res.str());
+        clientIt->second.setState(WRITING);
+
+        // tell epoll we now want to WRITE to this client
+        struct epoll_event ev;
+        ev.events  = EPOLLOUT;
+        ev.data.fd = proc.clientFd;
+        epoll_ctl(epollFD, EPOLL_CTL_MOD, proc.clientFd, &ev);
     }
 
-    close(child_stdout[0]);
-
-    return finalize_result(pid, output, failure);
+    // remove pipe from epoll, close it, clean up
+    epoll_ctl(epollFD, EPOLL_CTL_DEL, pipeFd, NULL);
+    close(pipeFd);
+    waitpid(proc.pid, NULL, WNOHANG);
+    active_processes.erase(it);
+//////////////////////////////
+	return true;
 }
 
 // CgiResult CgiHandler::run(const std::string& method, const std::string& script,

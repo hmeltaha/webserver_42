@@ -3,7 +3,7 @@ import time
 
 print("Content-Type: text/html\n")
 
-time.sleep(15)
+time.sleep(55)
 
 print("<html><body>")
 print("<h1>Finished after 5 seconds</h1>")

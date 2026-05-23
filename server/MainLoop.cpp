@@ -78,24 +78,63 @@ void MainLoop::handleClientEpollIn(int fd)
 	if (clients[fd].getState() == PROCESSING)
 	{
 		clients[fd].setStartTime(time(NULL));
-		// std::cout << clients[fd].getReqBuff() << std::endl;
-		// std::cout << "hi" << std::endl;
 		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
 
 		Router router;
 		router.seeIfPayloadTooLarge(clients[fd]);
-		if (clients[fd].getState() == PROCESSING)
-			clients[fd].res.response = router.route
-				(clients[fd].req, servers[clients[fd].getServerToConnect()].getConfig());
-		// std::cout << "response status code: " << clients[fd].res.response.status_code << std::endl;
 
-		clients[fd].setResBuff(clients[fd].res.getHeaders());
-		clients[fd].setState(WRITING);
-		struct epoll_event ev;
-		ev.events = EPOLLOUT ;
-		ev.data.fd = fd;
-		if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
-			throw std::runtime_error(strerror(errno));
+		if (clients[fd].getState() == PROCESSING)
+		{
+			const ServerConfig& config = servers[clients[fd].getServerToConnect()].getConfig();
+			std::string normalized_path = router.normalizePath(clients[fd].req.path);
+			const LocationConfig* location = router.findMatchingLocation(normalized_path, config);
+
+			bool is_cgi = false;
+			if (location)
+			{
+				std::string script = router.resolvePath(normalized_path, *location, config);
+				if (router.isCGIRequest(script, *location))
+				{
+					is_cgi = true;
+					int ok = handle_cgi.startCgi(fd, clients[fd].req.method, script,
+												clients[fd].req.query,
+												clients[fd].req.body,
+												StringMap(), epollFD);
+					if (ok != 0)
+					{
+						clients[fd].res.response = router.serveErrorPage(ok, config);
+						clients[fd].setResBuff(clients[fd].res.getHeaders());
+						clients[fd].setState(WRITING);
+						struct epoll_event ev;
+						ev.events  = EPOLLOUT;
+						ev.data.fd = fd;
+						epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev);
+					}
+				}
+			}
+
+			if (!is_cgi)
+			{
+				clients[fd].res.response = router.route(clients[fd].req, config);
+				clients[fd].setResBuff(clients[fd].res.getHeaders());
+				clients[fd].setState(WRITING);
+				struct epoll_event ev;
+				ev.events  = EPOLLOUT;
+				ev.data.fd = fd;
+				if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
+					throw std::runtime_error(strerror(errno));
+			}
+		}
+		else
+		{
+			//for payload too large case
+			clients[fd].setResBuff(clients[fd].res.getHeaders());
+			struct epoll_event ev;
+			ev.events  = EPOLLOUT;
+			ev.data.fd = fd;
+			if (epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev) == -1)
+				throw std::runtime_error(strerror(errno));
+		}
 	}
 }
 
@@ -165,19 +204,23 @@ void MainLoop::start()
 		serverfds.insert(servers[i].getSocketFd());
 	while (running)
 	{
-		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, -1);
+		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, 1000);
 		if (numEvents == -1 && running == true)
 			throw std::runtime_error(strerror(errno));
 		for (int i = 0; i < numEvents; ++i)
 		{
 			int fd = events[i].data.fd;
-			if (serverfds.find(fd) != serverfds.end())
+			if (handle_cgi.active_processes.count(fd))
+				handle_cgi.handleCgiOutput(fd, epollFD, clients);
+			
+			else if (serverfds.find(fd) != serverfds.end())
 				addNewClients(fd, serverTOClient[fd]);
 			else
 			{
 				if (events[i].events & (EPOLLHUP | EPOLLERR))
 				{
 					close(fd);
+					clients.erase(fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN)
@@ -194,11 +237,13 @@ void MainLoop::start()
 
 void MainLoop::checkTimeout()
 {
+
+	//for clients
 	time_t time_now = time(NULL);
 	std::map<int, Client>::iterator it = clients.begin();
 	while	 ( it != clients.end())
 	{
-		if (it->second.getState() == READING || it->second.getState() == READING_BODY || it->second.getState() == PROCESSING)
+		if (it->second.getState() == READING || it->second.getState() == READING_BODY)
 		{
 			if (time_now - it->second.getStartTime() > TIMEOUT)
 			{
@@ -210,6 +255,42 @@ void MainLoop::checkTimeout()
 			}
 		}
 		++it;
+	}
+
+	//for CGI processes
+	std::map<int, CgiProcess>::iterator cgiIt = handle_cgi.active_processes.begin();
+	while (cgiIt != handle_cgi.active_processes.end())
+	{
+		if (time_now - cgiIt->second.start_time > TIMEOUT)
+		{
+			kill(cgiIt->second.pid, SIGKILL);
+			waitpid(cgiIt->second.pid, NULL, WNOHANG);
+
+			HttpResponse result;
+			result.response.status_code = 504;
+			result.response.body = "<h1>504 Gateway Timeout</h1>\n<p>CGI script timed out.</p>";
+			result.response.mime_type = "text/html";
+			std::map<int, Client>::iterator clientIt = clients.find(cgiIt->second.clientFd);
+		if (clientIt != clients.end())
+		{
+			clientIt->second.setResBuff(result.getHeaders());
+			clientIt->second.setState(WRITING);
+			struct epoll_event ev;
+			ev.events = EPOLLOUT;
+			ev.data.fd = cgiIt->second.clientFd;
+			epoll_ctl(epollFD, EPOLL_CTL_MOD, cgiIt->second.clientFd, &ev);
+		}
+
+		epoll_ctl(epollFD, EPOLL_CTL_DEL, cgiIt->first, NULL);
+		close(cgiIt->first);
+		std::map<int, CgiProcess>::iterator tmp = cgiIt;
+		++cgiIt;
+		handle_cgi.active_processes.erase(tmp);
+		continue;
+
+		}
+		else
+			++cgiIt;
 	}
 }
 

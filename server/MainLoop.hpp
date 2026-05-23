@@ -3,7 +3,7 @@
 
 #define CHUNK_SIZE 1000
 #define MAX_EVENTS 2000
-#define TIMEOUT 30
+
 #include "Server.hpp"
 #include <vector>
 #include <sys/epoll.h>
@@ -18,6 +18,7 @@
 #include "../router/Router.hpp"
 #include "../handlers/FileResponse.hpp"
 #include "../response/HttpResponse.hpp"
+#include "../CGI/CgiHandler.hpp"
 extern bool running;
 
 
@@ -29,6 +30,8 @@ class MainLoop
 		std::map<int, Client> clients;
 		std::map<int, int> serverTOClient;
 		struct epoll_event events[MAX_EVENTS];
+		CgiHandler handle_cgi;
+
 	public:
 		MainLoop();
 		MainLoop(const std::vector<ServerConfig>& configs);

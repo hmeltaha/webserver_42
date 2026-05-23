@@ -256,28 +256,28 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 	}
 	// std::cout << "1. here🔥\n";
-	if (isCGIRequest(path, *location))
-		{
-    // std::cout << "🔥 CGI ENTERED: " << path << std::endl;
-		CgiHandler cgi;
-    	CgiResult result = cgi.run(
-    	    request.method,
-    	    path,
-    	    request.query,
-    	    request.body,
-    	    StringMap()
-    	);
+	// if (isCGIRequest(path, *location))
+	// 	{
+    // // std::cout << "🔥 CGI ENTERED: " << path << std::endl;
+	// 	CgiHandler cgi;
+    // 	CgiResult result = cgi.run(
+    // 	    request.method,
+    // 	    path,
+    // 	    request.query,
+    // 	    request.body,
+    // 	    StringMap()
+    // 	);
 
-    	response.status_code = result.status_code;
-    	response.body = result.body;
-    	// response.headers = result.headers;
-    // std::cout << "🔥 CGI FINISHED: " << result.status_code << std::endl;
+    // 	response.status_code = result.status_code;
+    // 	response.body = result.body;
+    // 	// response.headers = result.headers;
+    // // std::cout << "🔥 CGI FINISHED: " << result.status_code << std::endl;
 
-    	return response;
-			// response.status_code = 0; //special code
-			// response.body = path;
-			// return response;
-		}
+    // 	return response;
+	// 		// response.status_code = 0; //special code
+	// 		// response.body = path;
+	// 		// return response;
+	// 	}
 
 	if (request.method == "GET")
 	{

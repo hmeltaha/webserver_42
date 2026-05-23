@@ -39,6 +39,8 @@ std::string HttpResponse::getMessage() const
 			return "Payload Too Large";
 	else if (response.status_code == 500)
 		return "Internal Server Error";
+	else if (response.status_code == 504)
+		return "Gateway Timeout";
 	return "Unknown";
 }
 

@@ -25,74 +25,124 @@ static bool compare_entries(const DirEntry& a, const DirEntry& b)
 	return a.name < b.name;
 }
 
+
 std::string DirectoryLister::generateHTML(const std::vector<DirEntry> &entries, const std::string& uri)
 {
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html>\n";
-	html << "<head>\n";
-	html << "<title>Index of " << uri <<"</title>\n";
-	html << "<style>\n";
-    html << "body { font-family: Arial, sans-serif; margin: 20px; }\n";
-    html << "table { border-collapse: collapse; width: 100%; }\n";
-    html << "th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }\n";
-    html << "th { background-color: #f2f2f2; }\n";
-    html << "a { text-decoration: none; color: #0066cc; }\n";
+    std::stringstream html;
+
+    html << "<!DOCTYPE html>\n<html>\n<head>\n";
+    html << "<title>Index of " << uri << "</title>\n";
+    html << "<style>\n";
+    html << "body { font-family: monospace; max-width: 700px; margin: 60px auto; color: #333; }\n";
+    html << "h1 { font-size: 1rem; color: #999; margin-bottom: 20px; }\n";
+    html << "a { color: #333; text-decoration: none; }\n";
     html << "a:hover { text-decoration: underline; }\n";
-    html << "</style>\n";
-    html << "</head>\n";
-    html << "<body>\n";
+    html << "tr:hover { background: #f5f5f5; }\n";
+    html << "td { padding: 4px 20px 4px 0; }\n";
+    html << ".dim { color: #aaa; }\n";
+    html << "</style>\n</head>\n<body>\n";
 
-	html << "<h1>Index of " << uri << "</h1>\n";
+    html << "<h1>Index of " << uri << "</h1>\n";
+    html << "<table>\n";
 
-	html << "<table>\n";
-	html << "<tr><th>Name</th> <th>Size</th> <th>Modifiend</th></tr>\n";
+    if (uri != "/")
+        html << "<tr><td><a href=\"../\">../</a></td><td></td><td></td></tr>\n";
 
-	if (uri != "/")
-	{
-		html << "<tr>";
-		html << "<td> <a href=\"../\">../</a></td>";
-		html << "<td>-</td>";
-        html << "<td>-</td>";
-    	html << "</tr>\n";
-	}
+    for (size_t i = 0; i < entries.size(); i++)
+    {
+        const DirEntry& entry = entries[i];
 
-	for (size_t i = 0; i < entries.size(); i++)
-	{
-		const DirEntry& entry = entries[i];
+        std::string link = uri;
+        if (link[link.length() - 1] != '/')
+            link += "/";
+        link += entry.name;
+        if (entry.is_directory)
+            link += "/";
 
-		std::string link = uri; //building a clickable link
-		if (link[link.length() - 1] != '/')
-			link += "/";
-		link += entry.name;
-		if (entry.is_directory)
-			link += "/";
-		html << "<tr>";
+        html << "<tr>";
+        html << "<td><a href=\"" << link << "\">" << entry.name;
+        if (entry.is_directory) html << "/";
+        html << "</a></td>";
+        html << "<td class=\"dim\">";
+        if (entry.is_directory) html << "-";
+        else html << formatSize(entry.size);
+        html << "</td>";
+        html << "<td class=\"dim\">" << formatTime(entry.modified_time) << "</td>";
+        html << "</tr>\n";
+    }
 
-		html << "<td>";
-		if (entry.is_directory)
-			html << "📁 ";
-		html << "<a href=\"" << link << "\">" << entry.name;
-		if (entry.is_directory)
-			html << "/";
-		html << "</a></td>";
-
-		html << "<td>";
-		if (entry.is_directory)
-			html << "-"; //no size for a directory only files
-		else
-			html << formatSize(entry.size);
-		html << "</td>";
-
-		html << "<td>" << formatTime(entry.modified_time);
-		html << "</tr>\n";
-	}
-	html << "</table>\n";
-    html << "</body>\n";
-    html << "</html>\n";
-
+    html << "</table>\n</body>\n</html>\n";
     return html.str();
 }
+
+// std::string DirectoryLister::generateHTML(const std::vector<DirEntry> &entries, const std::string& uri)
+// {
+// 	std::stringstream html;
+// 	html << "<!DOCTYPE html>\n";
+// 	html << "<html>\n";
+// 	html << "<head>\n";
+// 	html << "<title>Index of " << uri <<"</title>\n";
+// 	html << "<style>\n";
+//     html << "body { font-family: Arial, sans-serif; margin: 20px; }\n";
+//     html << "table { border-collapse: collapse; width: 100%; }\n";
+//     html << "th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }\n";
+//     html << "th { background-color: #f2f2f2; }\n";
+//     html << "a { text-decoration: none; color: #0066cc; }\n";
+//     html << "a:hover { text-decoration: underline; }\n";
+//     html << "</style>\n";
+//     html << "</head>\n";
+//     html << "<body>\n";
+
+// 	html << "<h1>Index of " << uri << "</h1>\n";
+
+// 	html << "<table>\n";
+// 	html << "<tr><th>Name</th> <th>Size</th> <th>Modifiend</th></tr>\n";
+
+// 	if (uri != "/")
+// 	{
+// 		html << "<tr>";
+// 		html << "<td> <a href=\"../\">../</a></td>";
+// 		html << "<td>-</td>";
+//         html << "<td>-</td>";
+//     	html << "</tr>\n";
+// 	}
+
+// 	for (size_t i = 0; i < entries.size(); i++)
+// 	{
+// 		const DirEntry& entry = entries[i];
+
+// 		std::string link = uri; //building a clickable link
+// 		if (link[link.length() - 1] != '/')
+// 			link += "/";
+// 		link += entry.name;
+// 		if (entry.is_directory)
+// 			link += "/";
+// 		html << "<tr>";
+
+// 		html << "<td>";
+// 		if (entry.is_directory)
+// 			html << "📁 ";
+// 		html << "<a href=\"" << link << "\">" << entry.name;
+// 		if (entry.is_directory)
+// 			html << "/";
+// 		html << "</a></td>";
+
+// 		html << "<td>";
+// 		if (entry.is_directory)
+// 			html << "-"; //no size for a directory only files
+// 		else
+// 			html << formatSize(entry.size);
+// 		html << "</td>";
+
+// 		html << "<td>" << formatTime(entry.modified_time);
+// 		html << "</tr>\n";
+// 	}
+// 	html << "</table>\n";
+//     html << "</body>\n";
+//     html << "</html>\n";
+
+//     return html.str();
+// }
 std::string DirectoryLister::formatTime(time_t time)//computers store time as timestamp = number of seconds since Jan 1, 1970 (since the unix started)
 {
 	char buffer[80];

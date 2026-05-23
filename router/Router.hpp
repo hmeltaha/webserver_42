@@ -31,9 +31,9 @@ class Router
 		void seeIfPayloadTooLarge(Client client);
 		// bool isDirectory(const std::string& path) const;
 		bool BehindTheRoot(const std::string& path) const;
+		std::string normalizePath(const std::string& path);
 
 	private:
-		std::string normalizePath(const std::string& path);
 		bool fileExists(const std::string& path) const;
 		bool isRegularFile(const std::string& path) const;
 		bool isDirectory(const std::string& path) const;

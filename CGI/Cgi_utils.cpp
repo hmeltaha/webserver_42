@@ -112,7 +112,10 @@ void CgiHandler::run_child(int in_pipe[2], int out_pipe[2], const std::string& s
 void CgiHandler::write_body(int in_pipe[2], const std::string& body)
 {
     if (body.empty())
+	{
+		close(in_pipe[1]);
         return;
+	}
 
     size_t sent = 0;
     while (sent < body.size())
@@ -126,6 +129,7 @@ void CgiHandler::write_body(int in_pipe[2], const std::string& body)
     }
 
     close(in_pipe[1]);
+	
 }
 
 void CgiHandler::prepare_parent_pipes(int in_pipe[2], int out_pipe[2])
@@ -133,73 +137,6 @@ void CgiHandler::prepare_parent_pipes(int in_pipe[2], int out_pipe[2])
     close(in_pipe[0]);
     close(out_pipe[1]);
     fcntl(out_pipe[0], F_SETFL, O_NONBLOCK);
-}
-
-bool CgiHandler::collect_output(int fd, pid_t pid, std::string &output, bool &timed_out)
-{
-    char buffer[4096];
-    time_t start = time(NULL);
-
-    struct pollfd pfd;
-    pfd.fd = fd;
-    pfd.events = POLLIN;
-
-    while (true)
-    {
-        int elapsed = (int)(time(NULL) - start);
-
-        if (elapsed >= TIMEOUT)
-        {
-            timed_out = true;
-            kill(pid, SIGKILL);
-            waitpid(pid, NULL, 0);
-            return false;
-        }
-
-        int ready = poll(&pfd, 1, (TIMEOUT - elapsed) * 1000);
-
-        if (ready == -1 && errno == EINTR)
-            continue;
-
-        if (ready <= 0)
-            break;
-
-        if (pfd.revents & POLLIN)
-        {
-            ssize_t r = read(fd, buffer, sizeof(buffer));
-            if (r > 0)
-                output.append(buffer, r);
-            else
-                break;
-        }
-
-        if (pfd.revents & POLLHUP)
-            break;
-    }
-
-    return true;
-}
-
-CgiResult CgiHandler::timeout_failure(pid_t pid, CgiResult failure)
-{
-    waitpid(pid, NULL, 0);
-    failure.status_code = 504;
-    failure.body = "504 Gateway Timeout.";
-    return failure;
-}
-
-CgiResult CgiHandler::finalize_result(pid_t pid, std::string &output, CgiResult failure)
-{
-    int status;
-    waitpid(pid, &status, 0);
-
-    if (output.empty())
-    {
-        failure.body = "500 Internal Server Error: CGI produced no output.";
-        return failure;
-    }
-
-    return parse_output(output);
 }
 
 pid_t CgiHandler::fork_cgi_process(int in_pipe[2], int out_pipe[2], const std::string& script, char **env, CgiResult &failure)
