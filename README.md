@@ -2,159 +2,73 @@
 
 # Webserv
 
+## Quick Start
+
+```bash
+git clone <repository_url>
+cd webserv
+make
+./webserv
+```
+
+Server runs by default on:
+
+```text
+http://localhost:8080
+```
 ## Description
 
-`webserv` is a custom HTTP/1.1 web server built from scratch in C++. The goal of this project is to understand how web servers work internally by recreating the core behavior of servers such as NGINX or Apache.
+`webserv` is a non-blocking HTTP/1.1 web server written entirely in C++98.
 
-This project focuses on low-level network programming, socket management, request parsing, response generation, CGI execution, configuration handling, and multiplexing multiple client connections without blocking the server.
+The project recreates core web server behavior similar to NGINX and Apache in order to explore:
 
-The server is capable of:
+- HTTP protocol internals
+- Socket programming
+- Event-driven architectures
+- CGI execution
+- Request parsing
+- Process and resource management
 
-* Handling multiple client connections simultaneously
-* Serving static files
-* Processing HTTP requests and generating responses
-* Supporting different HTTP methods
-* Managing custom configuration files
-* Executing CGI scripts
-* Handling errors and timeouts
-* Supporting uploads and file serving
-* Managing multiple virtual servers
+The server supports static file serving, CGI execution, uploads, multiple virtual servers, custom routing, and concurrent client handling using `poll()`.
 
-The project was developed following the constraints and standards of the 42 curriculum, with a strong focus on:
-
-* Unix system programming
-* Network communication
-* Process management
-* Non-blocking I/O
-* Clean architecture and modular design
-* Performance and stability
-
+The project was developed under the constraints of the 42 curriculum, using only low-level system calls and standard C++98 features.
 ---
+
 
 ## Features
 
-### Core HTTP Features
-
-* HTTP/1.1 support
-* Persistent connections
-* Request parsing
-* Response generation
-* Custom error pages
-* MIME type handling
-* Directory handling
-
-### Supported HTTP Methods
-
-* `GET`
-* `POST`
-* `DELETE`
-
-### Configuration System
-
-* Multiple server blocks
-* Multiple locations
-* Custom ports and hosts
-* Route configuration
-* Root configuration
-* Index files
-* Upload paths
-* Maximum body size
-* Autoindex support
-* CGI configuration
-* Redirections
-
-### CGI Support
-
-* Python CGI execution
-* CGI environment variables
-* Timeout handling
-* Output collection
-* Error management
-
-### Networking
-
-* Socket programming using BSD sockets
-* Non-blocking sockets
-* `poll()` based multiplexing
-* Multiple simultaneous clients
-* Connection management
+- HTTP/1.1 support
+- Non-blocking I/O
+- `poll()`-based multiplexing
+- Multiple simultaneous clients
+- Static file serving
+- File uploads
+- CGI execution
+- Custom configuration parsing
+- Multiple virtual servers
+- Route and location handling
+- Custom error pages
+- Directory listing (autoindex)
+- Request parsing and response generation
+- Persistent connections
+- Timeout handling
+- MIME type support
 
 ---
 
-## Project Structure
+## Architecture Overview
 
-```bash
-webserv/
-.
-├── CGI
-│   ├── CgiHandler.cpp
-│   ├── CgiHandler.hpp
-│   └── Cgi_utils.cpp
-├── configs
-│   └── webser.conf
-├── handlers
-│   ├── DeleteHandler.cpp
-│   ├── DeleteHandler.hpp
-│   ├── DirectoryLister.cpp
-│   ├── DirectoryLister.hpp
-│   ├── FileHandler.cpp
-│   ├── FileHandler.hpp
-│   ├── FileResponse.hpp
-│   ├── UploadHandler.cpp
-│   └── UploadHandler.hpp
-├── main.cpp
-├── Makefile
-├── parser
-│   ├── ConfigParser.cpp
-│   ├── ConfigParser.hpp
-│   ├── ConfigParserUtils.cpp
-│   ├── LocationConfig.cpp
-│   ├── LocationConfig.hpp
-│   ├── ServerConfig.cpp
-│   └── ServerConfig.hpp
-├── README.md
-├── requests
-│   ├── HttpRequest.cpp
-│   ├── HttpRequest.hpp
-│   ├── RequestParser.cpp
-│   ├── RequestParser.hpp
-│   └── test.cpp
-├── response
-│   ├── HttpResponse.cpp
-│   └── HttpResponse.hpp
-├── router
-│   ├── Router.cpp
-│   └── Router.hpp
-├── server
-│   ├── Client.cpp
-│   ├── Client.hpp
-│   ├── MainLoop.cpp
-│   ├── MainLoop.hpp
-│   ├── Server.cpp
-│   └── Server.hpp
-├── signals
-│   ├── SignalHandler.cpp
-│   └── SignalHandler.hpp
-├── test
-│   ├── a.txt
-│   ├── big.bin
-│   ├── bigfile.bin
-│   ├── big.txt
-│   ├── cgi_tester
-│   ├── checklist.txt
-│   ├── empty.txt
-│   ├── hack.txt
-│   ├── hello.txt
-│   └── test.txt
-├── upload
-│   ├── bigfile.bin
-│   ├── empty.txt
-│   ├── folder1
-│   │   └── a.txt
-│
-└── utils
-    ├── MethodValidator.cpp
-    └── MethodValidator.hpp
+The server follows an event-driven architecture using non-blocking sockets and `poll()` for multiplexing.
+
+Main components include:
+
+- **Parser** — Parses server configuration files
+- **Server** — Manages listening sockets and client connections
+- **Request Parser** — Parses incoming HTTP requests
+- **Router** — Matches requests to configured locations
+- **Handlers** — Process HTTP methods and generate responses
+- **CGI Handler** — Executes CGI scripts using `fork()` and `execve()`
+- **Response System** — Builds and sends HTTP responses
 
 ---
 
@@ -337,17 +251,16 @@ curl -v http://localhost:8080
 
 ## AI Usage
 
-Artificial Intelligence tools were used as learning assistants during the development of this project.
+AI tools were used as supplementary learning resources during development.
 
-AI was primarily used for:
+They were primarily used for:
+- Clarifying HTTP and networking concepts
+- Understanding CGI behavior
+- Exploring debugging strategies
+- Reviewing architectural approaches
+- Generating edge-case testing ideas
 
-* Understanding HTTP concepts
-* Clarifying socket behavior
-* Debugging specific issues
-* Learning CGI execution flow
-* Reviewing architecture ideas
-* Generating test ideas and edge cases
-* Explaining low-level networking concepts
+All design decisions, implementation, debugging, and integration were completed by the project authors.
 
 ---
 
