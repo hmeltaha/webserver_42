@@ -77,7 +77,7 @@ void CgiHandler::run_child(int in_pipe[2], int out_pipe[2], const std::string& s
     if (!realpath(script.c_str(), abs_path))
     {
         std::cerr << "CGI: realpath failed for " << script << ": " << strerror(errno) << std::endl;
-        _exit(1);
+        exit(1);
     }
 
     std::string abs_path_str(abs_path);
@@ -106,7 +106,7 @@ void CgiHandler::run_child(int in_pipe[2], int out_pipe[2], const std::string& s
     execve(argv[0], argv, env);
 
     std::cerr << "CGI execve failed: " << strerror(errno) << std::endl;
-    _exit(1);
+    exit(1);
 }
 
 void CgiHandler::write_body(int in_pipe[2], const std::string& body)
