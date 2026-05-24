@@ -1,4 +1,4 @@
-# *This project has been created as part of the 42 curriculum by <login1>, <login2>, <login3>.*
+# *This project has been created as part of the 42 curriculum by Haleassa, Hmeltaha, Nagha
 
 # Webserv
 
@@ -85,23 +85,76 @@ The project was developed following the constraints and standards of the 42 curr
 
 ```bash
 webserv/
+.
+├── CGI
+│   ├── CgiHandler.cpp
+│   ├── CgiHandler.hpp
+│   └── Cgi_utils.cpp
+├── configs
+│   └── webser.conf
+├── handlers
+│   ├── DeleteHandler.cpp
+│   ├── DeleteHandler.hpp
+│   ├── DirectoryLister.cpp
+│   ├── DirectoryLister.hpp
+│   ├── FileHandler.cpp
+│   ├── FileHandler.hpp
+│   ├── FileResponse.hpp
+│   ├── UploadHandler.cpp
+│   └── UploadHandler.hpp
+├── main.cpp
 ├── Makefile
+├── parser
+│   ├── ConfigParser.cpp
+│   ├── ConfigParser.hpp
+│   ├── ConfigParserUtils.cpp
+│   ├── LocationConfig.cpp
+│   ├── LocationConfig.hpp
+│   ├── ServerConfig.cpp
+│   └── ServerConfig.hpp
 ├── README.md
-├── config/
-│   └── default.conf
-├── includes/
-├── src/
-│   ├── main.cpp
-│   ├── server/
-│   ├── parsing/
-│   ├── request/
-│   ├── response/
-│   ├── cgi/
-│   └── utils/
-├── www/
-├── cgi-bin/
-└── tests/
-```
+├── requests
+│   ├── HttpRequest.cpp
+│   ├── HttpRequest.hpp
+│   ├── RequestParser.cpp
+│   ├── RequestParser.hpp
+│   └── test.cpp
+├── response
+│   ├── HttpResponse.cpp
+│   └── HttpResponse.hpp
+├── router
+│   ├── Router.cpp
+│   └── Router.hpp
+├── server
+│   ├── Client.cpp
+│   ├── Client.hpp
+│   ├── MainLoop.cpp
+│   ├── MainLoop.hpp
+│   ├── Server.cpp
+│   └── Server.hpp
+├── signals
+│   ├── SignalHandler.cpp
+│   └── SignalHandler.hpp
+├── test
+│   ├── a.txt
+│   ├── big.bin
+│   ├── bigfile.bin
+│   ├── big.txt
+│   ├── cgi_tester
+│   ├── checklist.txt
+│   ├── empty.txt
+│   ├── hack.txt
+│   ├── hello.txt
+│   └── test.txt
+├── upload
+│   ├── bigfile.bin
+│   ├── empty.txt
+│   ├── folder1
+│   │   └── a.txt
+│
+└── utils
+    ├── MethodValidator.cpp
+    └── MethodValidator.hpp
 
 ---
 
@@ -115,13 +168,6 @@ Before compiling the project, make sure you have:
 * `make`
 * Linux or macOS environment
 * C++98 compatible compiler
-
-Example:
-
-```bash
-c++ --version
-make --version
-```
 
 ---
 
@@ -137,7 +183,7 @@ cd webserv
 Compile the project:
 
 ```bash
-make
+   make
 ```
 
 Available Makefile rules:
@@ -153,13 +199,11 @@ make re     # Recompile everything
 
 ### Running the Server
 
-Run the server with the default configuration:
+Run the server with the default configuration or with a custom configuration file:
 
 ```bash
 ./webserv
 ```
-
-Run the server with a custom configuration file:
 
 ```bash
 ./webserv config/default.conf
@@ -289,11 +333,6 @@ curl -v http://localhost:8080
 * Python CGI Documentation
 * Unix process management documentation
 
-### C++
-
-* cppreference.com
-* C++98 standard references
-
 ---
 
 ## AI Usage
@@ -309,8 +348,6 @@ AI was primarily used for:
 * Reviewing architecture ideas
 * Generating test ideas and edge cases
 * Explaining low-level networking concepts
-
-AI was not used to fully generate the project implementation. All core architecture, debugging, integration, and final implementation decisions were designed, tested, and validated manually by the team.
 
 ---
 
@@ -344,10 +381,9 @@ Possible future improvements include:
 
 ## Authors
 
-* <login1>
-* <login2>
-* <login3>
-
+* Hmeltaha
+* Nagha
+* Haleassa
 ---
 
 ## License
