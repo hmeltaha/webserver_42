@@ -241,8 +241,6 @@ void MainLoop::start()
 
 void MainLoop::checkTimeout()
 {
-
-	//for clients
 	time_t time_now = time(NULL);
 	std::map<int, Client>::iterator it = clients.begin();
 	while	 ( it != clients.end())

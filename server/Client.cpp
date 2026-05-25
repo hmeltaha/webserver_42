@@ -10,6 +10,7 @@ Client::Client(/* args */)
 	bytes_send = 0;
 	server_to_connect = -1;
 	payload_too_large = false;
+	start_time = time(NULL);
 }
 
 Client::~Client()
@@ -37,6 +38,7 @@ Client::Client(const Client& other)
 {
 	this->clientFd = other.clientFd;
 	this->reqBuff = other.reqBuff;
+	this->body = other.body;
 	this->state = other.state;
 	this->bytes_send = 0;
 	this->server_to_connect = other.server_to_connect;
@@ -50,6 +52,8 @@ Client& Client::operator=(const Client& other)
 	{
 		this->clientFd = other.clientFd;
 		this->reqBuff = other.reqBuff;
+		this->body = other.body;
+		this->len_body = other.len_body;
 		this->state = other.state;
 		this->bytes_send = 0;
 		this->server_to_connect = other.server_to_connect;
