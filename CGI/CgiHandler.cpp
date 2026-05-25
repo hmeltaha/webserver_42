@@ -12,7 +12,7 @@ std::string CgiHandler::find_interpreter(const std::string& script)
 {
     size_t dot = script.rfind('.');
     if (dot == std::string::npos)
-        return "";
+    return "";
 
     std::string extension = script.substr(dot);
     if (extension == ".py")
@@ -29,8 +29,8 @@ std::string CgiHandler::find_interpreter(const std::string& script)
 // Host: localhost
 // Content-Length: 11
 char **CgiHandler::make_env_array(const std::string& method, const std::string& script,
-                                  const std::string& query, const std::string& body,
-                                  const StringMap& extra)
+      const std::string& query, const std::string& body,
+      const StringMap& extra)
 {
     std::vector<char *> vars; //tmp vectore to hold env vars before converting to char**
 
@@ -48,27 +48,27 @@ char **CgiHandler::make_env_array(const std::string& method, const std::string& 
 
     if (method == "POST")
     {
-        std::ostringstream content_size;
-        content_size << body.size();
-        vars.push_back(join_key_value("CONTENT_LENGTH", content_size.str()));
-        vars.push_back(join_key_value("CONTENT_TYPE",   "application/x-www-form-urlencoded"));
+    std::ostringstream content_size;
+    content_size << body.size();
+    vars.push_back(join_key_value("CONTENT_LENGTH", content_size.str()));
+    vars.push_back(join_key_value("CONTENT_TYPE",   "application/x-www-form-urlencoded"));
     }
     else
     {
-        vars.push_back(join_key_value("CONTENT_LENGTH", "0"));
-        vars.push_back(join_key_value("CONTENT_TYPE",   ""));
+    vars.push_back(join_key_value("CONTENT_LENGTH", "0"));
+    vars.push_back(join_key_value("CONTENT_TYPE",   ""));
     }
 
     for (StringMap::const_iterator it = extra.begin(); it != extra.end(); it++)
-        vars.push_back(join_key_value(it->first, it->second));
+    vars.push_back(join_key_value(it->first, it->second));
 
     vars.push_back(NULL);
 
     char **result = (char **)malloc(vars.size() * sizeof(char *));
     if (!result)
-        return NULL;
+    return NULL;
     for (size_t i = 0; i < vars.size(); i++)
-        result[i] = vars[i];
+    result[i] = vars[i];
     return result;
 }
 
@@ -79,33 +79,33 @@ CgiResult CgiHandler::parse_output(const std::string& raw)
     CgiResult result;
     result.status_code = 200;
 
-    size_t      split   = raw.find("\r\n\r\n");
+    size_t    split   = raw.find("\r\n\r\n");
     std::string newline = "\r\n";
 
     if (split == std::string::npos)
     {
-        split   = raw.find("\n\n");
-        newline = "\n";
+    split   = raw.find("\n\n");
+    newline = "\n";
     }
     if (split == std::string::npos)
     {
-        result.body = raw;
-        return result;
+    result.body = raw;
+    return result;
     }
 
     std::string header_section = raw.substr(0, split);
     result.body = raw.substr(split + newline.size() * 2);
 
     std::istringstream header_stream(header_section);
-    std::string        line;
+    std::string line;
     while (std::getline(header_stream, line))
     {
-        if (!line.empty() && line[line.size() - 1] == '\r')
-            line.erase(line.size() - 1);
-        if (line.substr(0, 7) == "Status:")
-            result.status_code = std::atoi(line.substr(8).c_str());
-        else
-            result.headers += line + "\r\n";
+    if (!line.empty() && line[line.size() - 1] == '\r')
+    line.erase(line.size() - 1);
+    if (line.substr(0, 7) == "Status:")
+    result.status_code = std::atoi(line.substr(8).c_str());
+    else
+    result.headers += line + "\r\n";
     }
     return result;
 }
@@ -128,17 +128,16 @@ int CgiHandler::startCgi(int clientFd, const std::string& method, const std::str
 	int child_stdin[2];
 	int child_stdout[2];
     if (!setup_pipes(child_stdin, child_stdout, failure))
-        return 500;
+    return 500;
 
     char **env = build_env(method, script, query, body, extra_env, child_stdin, child_stdout, failure);
     if (!env)
-        return 500;
+    return 500;
 
     pid_t pid = fork_cgi_process(child_stdin, child_stdout, script, env, failure);
     if (pid == -1)
-        return 500;
+    return 500;
 
-// fcntl(pid, F_SETFL, O_NONBLOCK);
     cleanup_env(env);
 
     write_body(child_stdin, body);
@@ -150,8 +149,8 @@ int CgiHandler::startCgi(int clientFd, const std::string& method, const std::str
 	if (epoll_ctl(epollFD, EPOLL_CTL_ADD, child_stdout[0], &event) == -1)
 	{
 		close(child_stdout[0]);
-        kill(pid, SIGKILL);
-        waitpid(pid, NULL, WNOHANG);
+    kill(pid, SIGKILL);
+    waitpid(pid, NULL, WNOHANG);
 		std::cerr << "CGI: Failed to add CGI output pipe to epoll: " << strerror(errno) << std::endl;
 		return 500;
 	}
@@ -196,7 +195,7 @@ bool CgiHandler::handleCgiOutput(int pipeFd, int epollFD,
     res << "Content-Length: " << result.body.size() << "\r\n";
     res << "Content-Type: text/html\r\n";
     if (!result.headers.empty())
-        res << result.headers;
+    res << result.headers;
     res << "Connection: close\r\n";
     res << "\r\n";
     res << result.body;
@@ -205,14 +204,14 @@ bool CgiHandler::handleCgiOutput(int pipeFd, int epollFD,
 	   std::map<int, Client>::iterator clientIt = clients.find(proc.clientFd);
     if (clientIt != clients.end())
     {
-        clientIt->second.setResBuff(res.str());
-        clientIt->second.setState(WRITING);
+    clientIt->second.setResBuff(res.str());
+    clientIt->second.setState(WRITING);
 
-        // tell epoll we now want to WRITE to this client
-        struct epoll_event ev;
-        ev.events  = EPOLLOUT;
-        ev.data.fd = proc.clientFd;
-        epoll_ctl(epollFD, EPOLL_CTL_MOD, proc.clientFd, &ev);
+    // tell epoll we now want to WRITE to this client
+    struct epoll_event ev;
+    ev.events  = EPOLLOUT;
+    ev.data.fd = proc.clientFd;
+    epoll_ctl(epollFD, EPOLL_CTL_MOD, proc.clientFd, &ev);
     }
 
     // remove pipe from epoll, close it, clean up
@@ -225,141 +224,141 @@ bool CgiHandler::handleCgiOutput(int pipeFd, int epollFD,
 }
 
 // CgiResult CgiHandler::run(const std::string& method, const std::string& script,
-//                            const std::string& query, const std::string& body,
-//                            const StringMap& extra_env)
+//                                    const std::string& query, const std::string& body,
+//                                    const StringMap& extra_env)
 // {
-//     CgiResult failure;
-//     failure.status_code = 500;
-//     failure.body        = "Internal Server Error: CGI failed.";
+//   CgiResult failure;
+//   failure.status_code = 500;
+//   failure.body    = "Internal Server Error: CGI failed.";
 
-//     int child_stdin[2];
-//     int child_stdout[2];
-//     if (pipe(child_stdin) == -1 || pipe(child_stdout) == -1)
-//     {
-//         std::cerr << "CGI: pipe() failed: " << strerror(errno) << std::endl;
-//         return failure;
-//     }
+//   int child_stdin[2];
+//   int child_stdout[2];
+//   if (pipe(child_stdin) == -1 || pipe(child_stdout) == -1)
+//   {
+//        std::cerr << "CGI: pipe() failed: " << strerror(errno) << std::endl;
+//        return failure;
+//   }
 
-//     char **env = make_env_array(method, script, query, body, extra_env);
-//     if (!env)
-//     {
-//        close_pipes(child_stdin, child_stdout);
+//   char **env = make_env_array(method, script, query, body, extra_env);
+//   if (!env)
+//   {
+//       close_pipes(child_stdin, child_stdout);
 // 	   std::cerr << "CGI: Failed to allocate environment variables." << std::endl;
-//     	return (failure);
-//     }
+//   	return (failure);
+//   }
 
-//     pid_t child_pid = fork();
-//     if (child_pid == -1)
-//     {
-//         std::cerr << "CGI: fork() failed: " << strerror(errno) << std::endl;
-//         cleanup_env(env);
-//         close_pipes(child_stdin, child_stdout);
-//         return failure;
-//     }
+//   pid_t child_pid = fork();
+//   if (child_pid == -1)
+//   {
+//        std::cerr << "CGI: fork() failed: " << strerror(errno) << std::endl;
+//        cleanup_env(env);
+//        close_pipes(child_stdin, child_stdout);
+//        return failure;
+//   }
 
-//     if (child_pid == 0)
-//     {
-//         dup2(child_stdin[0],  STDIN_FILENO);
-//         dup2(child_stdout[1], STDOUT_FILENO);
-//         close_pipes(child_stdin, child_stdout);
-//         size_t last_slash = script.rfind('/');
-//         if (last_slash != std::string::npos)
+//   if (child_pid == 0)
+//   {
+//        dup2(child_stdin[0],  STDIN_FILENO);
+//        dup2(child_stdout[1], STDOUT_FILENO);
+//        close_pipes(child_stdin, child_stdout);
+//        size_t last_slash = script.rfind('/');
+//        if (last_slash != std::string::npos)
 //             chdir(script.substr(0, last_slash).c_str());
 
-//         std::string interpreter = find_interpreter(script);
+//        std::string interpreter = find_interpreter(script);
 
-//         char *argv[3];
-//         if (!interpreter.empty())
-//         {
+//        char *argv[3];
+//        if (!interpreter.empty())
+//        {
 //             argv[0] = const_cast<char *>(interpreter.c_str());
 //             argv[1] = const_cast<char *>(script.c_str());
 //             argv[2] = NULL;
-//         }
-//         else
-//         {
+//        }
+//        else
+//        {
 //             argv[0] = const_cast<char *>(script.c_str());
 //             argv[1] = NULL;
-//         }
+//        }
 
-//         execve(argv[0], argv, env);
-//         std::cerr << "CGI: execve failed: " << strerror(errno) << std::endl;
-//         _exit(1);
-//     }
+//        execve(argv[0], argv, env);
+//        std::cerr << "CGI: execve failed: " << strerror(errno) << std::endl;
+//        _exit(1);
+//   }
 
-//     cleanup_env(env);
-//     close(child_stdin[0]);
-//     close(child_stdout[1]);
-//     fcntl(child_stdout[0], F_SETFL, O_NONBLOCK);
+//   cleanup_env(env);
+//   close(child_stdin[0]);
+//   close(child_stdout[1]);
+//   fcntl(child_stdout[0], F_SETFL, O_NONBLOCK);
 
-//     if (!body.empty())
-//         write(child_stdin[1], body.c_str(), body.size());
-//     close(child_stdin[1]);
+//   if (!body.empty())
+//        write(child_stdin[1], body.c_str(), body.size());
+//   close(child_stdin[1]);
 
-//     std::string   output;
-//     char          buffer[4096];
-//     bool          timed_out    = false;
-//     time_t        start_time   = time(NULL);
-//     struct pollfd watch;
+//   std::string   output;
+//   char      buffer[4096];
+//   bool      timed_out      = false;
+//   time_t           start_time   = time(NULL);
+//   struct pollfd watch;
 
-//     watch.fd     = child_stdout[0];
-//     watch.events = POLLIN;
+//   watch.fd     = child_stdout[0];
+//   watch.events = POLLIN;
 
-//     while (true)
-//     {
-//         int seconds_passed = (int)(time(NULL) - start_time);
-//         int time_left      = (TIMEOUT - seconds_passed) * 1000;
+//   while (true)
+//   {
+//        int seconds_passed = (int)(time(NULL) - start_time);
+//        int time_left         = (TIMEOUT - seconds_passed) * 1000;
 
-//         if (seconds_passed >= TIMEOUT)
-//         {
+//        if (seconds_passed >= TIMEOUT)
+//        {
 //             timed_out = true;
 //             break;
-//         }
+//        }
 
-//         int ready = poll(&watch, 1, time_left); //waiting for output or timeout
-//         if (ready == -1 && errno == EINTR)
+//        int ready = poll(&watch, 1, time_left); //waiting for output or timeout
+//        if (ready == -1 && errno == EINTR)
 //             continue;
-//         if (ready <= 0)
-//         {
+//        if (ready <= 0)
+//        {
 //             timed_out = (ready == 0);
 //             break;
-//         }
+//        }
 
-//         if (watch.revents & POLLIN)
-//         {
+//        if (watch.revents & POLLIN)
+//        {
 //             ssize_t bytes_read = read(child_stdout[0], buffer, sizeof(buffer));
 //             if (bytes_read > 0)
-//                 output.append(buffer, bytes_read);
+//                   output.append(buffer, bytes_read);
 //             else if (bytes_read == 0)
-//                 break;
-//         }
-//         if (watch.revents & POLLHUP)
-//         {
+//                   break;
+//        }
+//        if (watch.revents & POLLHUP)
+//        {
 //             ssize_t bytes_read;
 //             while ((bytes_read = read(child_stdout[0], buffer, sizeof(buffer))) > 0) // colleecting cgi output like stream until EOF
-//                 output.append(buffer, bytes_read);
+//                   output.append(buffer, bytes_read);
 //             break;
-//         }
-//     }
+//        }
+//   }
 
-//     close(child_stdout[0]);
+//   close(child_stdout[0]);
 
-//     if (timed_out)
-//     {
-//         kill(child_pid, SIGKILL);
-//         waitpid(child_pid, NULL, 0);
-//         failure.status_code = 504;
-//         failure.body        = "504 Gateway Timeout.";
-//         return failure;
-//     }
+//   if (timed_out)
+//   {
+//        kill(child_pid, SIGKILL);
+//        waitpid(child_pid, NULL, 0);
+//        failure.status_code = 504;
+//        failure.body    = "504 Gateway Timeout.";
+//        return failure;
+//   }
 
-//     int exit_code;
-//     waitpid(child_pid, &exit_code, 0);
+//   int exit_code;
+//   waitpid(child_pid, &exit_code, 0);
 
-//     if (output.empty())
-//     {
-//         failure.body = "500 Internal Server Error: CGI produced no output.";
-//         return failure;
-//     }
+//   if (output.empty())
+//   {
+//        failure.body = "500 Internal Server Error: CGI produced no output.";
+//        return failure;
+//   }
 
-//     return parse_output(output);
+//   return parse_output(output);
 // }

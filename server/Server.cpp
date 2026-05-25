@@ -60,19 +60,11 @@ void Server::setSockets()
 		throw std::runtime_error(strerror(errno));
 
 	// Make the socket non-blocking
-	int flags = fcntl(serverFd, F_GETFL, 0);
-	if (flags == -1)
+	// int flags = fcntl(serverFd, F_GETFL, 0);
+	// if (flags == -1)
+	// 	throw std::runtime_error(strerror(errno));
+	if (fcntl(serverFd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error(strerror(errno));
-	if (fcntl(serverFd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error(strerror(errno));
-
-	// int newFlags = fcntl(serverFd, F_GETFL, 0);
-	// if (newFlags == -1)
-	//     throw std::runtime_error("fcntl get after set failure\n");
-
-	// if (!(newFlags & O_NONBLOCK)) {
-	//     throw std::runtime_error("Socket is still blocking!");
-	// }
 }
 
 int Server::getSocketFd() const

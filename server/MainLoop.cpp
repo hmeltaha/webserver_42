@@ -38,15 +38,15 @@ void MainLoop::addNewClients(int fd, int server_index)
 		int clientFd = accept(fd, NULL, NULL);
 		if (clientFd == -1)
 		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK) // no more client are witting right now. i accept all client for now.
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				break;
 			throw std::runtime_error(strerror(errno));
 		}
-		// std::cout << "Accept new client....." << std::endl;
-		int flags = fcntl(clientFd, F_GETFL, 0);
-		if (flags == -1)
-			throw std::runtime_error(strerror(errno));
-		if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+
+		// int flags = fcntl(clientFd, F_GETFL, 0);
+		// if (flags == -1)
+		// 	throw std::runtime_error(strerror(errno));
+		if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 			throw std::runtime_error(strerror(errno));
 		struct epoll_event event;
 		event.events = EPOLLIN;
@@ -149,8 +149,6 @@ void MainLoop::createEpoll()
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		// add sockets fds to epoll
-		// EPOLLIN = يوجد شخص يدق الباب if server fd
-		// EPOLLIN = الشخص يتكلم (يرسل request) if client fd
 		int fd = servers[i].getSocketFd();
 		std::cout << "Adding server fd: " << fd << std::endl;
 		event.events = EPOLLIN;
@@ -174,10 +172,11 @@ void MainLoop::handleClientEpollOut(int fd)
 	size_t to_send = std::min(remaining, (size_t)CHUNK_SIZE);
 	int sent = send(fd, res.c_str() + clients[fd].getBytesSend() , to_send, 0);
 
-	if (sent == -1)
+	if (sent <= 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
+		if (sent == -1)
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				return;
 		close(fd);
 		clients.erase(fd);
 		return;
@@ -212,7 +211,7 @@ void MainLoop::start()
 			int fd = events[i].data.fd;
 			if (handle_cgi.active_processes.count(fd))
 				handle_cgi.handleCgiOutput(fd, epollFD, clients);
-			
+
 			else if (serverfds.find(fd) != serverfds.end())
 				addNewClients(fd, serverTOClient[fd]);
 			else
