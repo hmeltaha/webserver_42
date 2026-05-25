@@ -84,6 +84,14 @@ FileResponse FileHandler::serveFile(const std::string& file_path)
 	std::string mime_type = getMimeType(extension);
 
 	std::ifstream file(file_path.c_str(), std::ios::binary);//reads byte by byte
+
+	if (!file.is_open())
+	{
+		response.status_code = 403;
+		response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+		response.mime_type = "text/html";
+		return response;
+	}
 	std::string contents;
 	char c;
 	while (file.get(c))

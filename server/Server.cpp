@@ -48,7 +48,7 @@ void Server::setSockets()
 
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
-	address.sin_port = htons(config.listen_directives[index].port);
+	address.sin_port = htons(config.listen_directives[0].port);
 	// address.sin_addr.s_add = INADDR_ANY;
 	address.sin_addr.s_addr = INADDR_ANY;//inet_addr(config.listen_directives[index].host.c_str());
 	if (bind(serverFd,(struct sockaddr*) &address, sizeof(address)) < 0)
