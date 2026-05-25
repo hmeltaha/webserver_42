@@ -187,16 +187,16 @@ curl -X DELETE http://localhost:8080/file.txt
 CGI request:
 
 ```bash
-curl http://localhost:8080/cgi-bin/test.py
+curl http://localhost:8080/cgi/test.py
 ```
 
 ---
 
 ## Technical Choices
 
-### Why `poll()`?
+### Why `epoll()`?
 
-`poll()` was used to handle multiple client connections simultaneously while keeping the server non-blocking. This allows the server to efficiently monitor many file descriptors and react to incoming events.
+`epoll()` was used to handle multiple client connections simultaneously while keeping the server non-blocking. This allows the server to efficiently monitor many file descriptors and react to incoming events.
 
 ### Why Non-Blocking I/O?
 
