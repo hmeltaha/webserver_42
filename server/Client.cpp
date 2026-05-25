@@ -100,34 +100,61 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 {
 	if (state != READING && state != READING_BODY)
 		return;
-	reqBuff += buff;
-	size_t headerEnd = reqBuff.find("\r\n\r\n");
-	if (headerEnd == std::string::npos)
-		return;
-	size_t pos = reqBuff.find("Content-Length:");
-	if (pos != std::string::npos)
+
+	// If still reading headers
+	if (state == READING)
 	{
-		std::string lenStr = reqBuff.substr(pos + 15);
-		size_t start = lenStr.find_first_not_of(" ");
-		size_t end = lenStr.find("\r\n");
-		body = reqBuff.substr(headerEnd + 4);
-		if (start != std::string::npos)
-			lenStr = lenStr.substr(start, end - start);
-		len_body = std::atoi(lenStr.c_str());
-		if (len_body > config.client_max_body_size)
+		reqBuff += buff;
+		size_t headerEnd = reqBuff.find("\r\n\r\n");
+		if (headerEnd == std::string::npos)
+			return;  // Headers not complete yet
+
+		// Extract body from this chunk if present
+		size_t bodyStartInChunk = buff.find("\r\n\r\n");
+		if (bodyStartInChunk != std::string::npos)
 		{
-			payload_too_large = true;
-			state = PROCESSING;
-			return;
+			body += buff.substr(bodyStartInChunk + 4);
 		}
-		size_t len_of_recv_body = reqBuff.length() - (headerEnd + 4);
-		if (len_of_recv_body >= len_body)
-			state = PROCESSING;
+
+		// Look for Content-Length in headers
+		size_t pos = reqBuff.find("Content-Length:");
+		if (pos != std::string::npos)
+		{
+			std::string lenStr = reqBuff.substr(pos + 15);
+			size_t start = lenStr.find_first_not_of(" ");
+			size_t end = lenStr.find("\r\n");
+			if (start != std::string::npos)
+				lenStr = lenStr.substr(start, end - start);
+			len_body = std::atoi(lenStr.c_str());
+
+			if (len_body > config.client_max_body_size)
+			{
+				payload_too_large = true;
+				state = PROCESSING;
+				return;
+			}
+
+			// Keep only headers in reqBuff, move to body reading
+			reqBuff = reqBuff.substr(0, headerEnd + 4);
+
+			if ((size_t)body.length() >= len_body)
+				state = PROCESSING;
+			else
+				state = READING_BODY;
+		}
 		else
-			state = READING_BODY;
+		{
+			// No body expected
+			state = PROCESSING;
+		}
 	}
-	else
-		state = PROCESSING;
+	else if (state == READING_BODY)
+	{
+		// Only accumulate body data
+		body += buff;
+		if ((size_t)body.length() >= len_body)
+			state = PROCESSING;
+	}
 }
 
 time_t Client::getStartTime() const

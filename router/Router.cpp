@@ -123,9 +123,9 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 
 bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& location) const
 {
-	std::cout << "cgi_path = [" << location.cgi_path << "]\n";
-std::cout << "cgi_extension = [" << location.cgi_extension << "]\n";
-std::cout << "file_path = [" << file_path << "]\n";
+	// std::cout << "cgi_path = [" << location.cgi_path << "]\n";
+// std::cout << "cgi_extension = [" << location.cgi_extension << "]\n";
+// std::cout << "file_path = [" << file_path << "]\n";
 
 	if (location.cgi_path.empty() || location.cgi_extension.empty())
 		return false;

@@ -6,7 +6,7 @@
 #include "../requests/RequestParser.hpp"
 #include "../response/HttpResponse.hpp"
 #include "Server.hpp"
-#define TIMEOUT 5
+#define TIMEOUT 20
 
 enum ClientState
 {
@@ -24,12 +24,12 @@ class Client
 		std::string reqBuff;
 		std::string resBuff;
 		ClientState state;
-		std::string body;
 		time_t start_time;
 		size_t bytes_send; //remove it later
 		bool payload_too_large;
 
 	public:
+		std::string body;  // Made public for MainLoop to access
 		HttpRequest req;		// private or public ???????????????
 		RequestParser parser;	// private or public ???????????????
 		HttpResponse res;		// private or public ???????????????

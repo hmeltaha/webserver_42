@@ -66,7 +66,6 @@ void MainLoop::handleClientEpollIn(int fd)
 	{
 		if (flag == -1)
 		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				return;
 		}
 		close (fd);
@@ -78,7 +77,14 @@ void MainLoop::handleClientEpollIn(int fd)
 	if (clients[fd].getState() == PROCESSING)
 	{
 		clients[fd].setStartTime(time(NULL));
-		clients[fd].req = clients[fd].parser.parse(clients[fd].getReqBuff());
+		// Reconstruct full request for parsing (headers + body)
+		std::string fullRequest = clients[fd].getReqBuff();
+		if (!clients[fd].body.empty())
+		{
+			// Add body after the headers
+			fullRequest += clients[fd].body;
+		}
+		clients[fd].req = clients[fd].parser.parse(fullRequest);
 
 		Router router;
 		router.seeIfPayloadTooLarge(clients[fd]);
@@ -175,7 +181,6 @@ void MainLoop::handleClientEpollOut(int fd)
 	if (sent <= 0)
 	{
 		if (sent == -1)
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				return;
 		close(fd);
 		clients.erase(fd);
@@ -203,7 +208,7 @@ void MainLoop::start()
 		serverfds.insert(servers[i].getSocketFd());
 	while (running)
 	{
-		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, 1000);
+		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, 100);
 		if (numEvents == -1 && running == true)
 			throw std::runtime_error(strerror(errno));
 		for (int i = 0; i < numEvents; ++i)
@@ -262,6 +267,9 @@ void MainLoop::checkTimeout()
 	{
 		if (time_now - cgiIt->second.start_time > TIMEOUT)
 		{
+			printf("******************************************************************************cgi:%i\n", cgiIt->second.clientFd);
+			printf("time:%li\n", time_now);
+			fflush(stdout);
 			kill(cgiIt->second.pid, SIGKILL);
 			waitpid(cgiIt->second.pid, NULL, WNOHANG);
 
