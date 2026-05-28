@@ -83,6 +83,76 @@ void ConfigParser::parseListen(ServerConfig& server, const std::string& value)
 	server.listen_directives.push_back(ListenDirective(host_part, port));
 }
 
+void ConfigParser::parseMultiplePorts(ServerConfig& server)
+{
+	std::string token = peekToken();
+	std::string host_part = "0.0.0.0";
+	
+	// Check if first token contains a host:port format
+	token = getNextToken();
+	size_t colon_pos = token.find(':');
+	
+	if (colon_pos != std::string::npos)
+	{
+		host_part = token.substr(0, colon_pos);
+		token = token.substr(colon_pos + 1);
+	}
+	
+	// Parse first port
+	int port = atoi(token.c_str());
+	if (port < 1 || port > 65535)
+		throw std::runtime_error("Invalid port number: " + token);
+	
+	for (size_t i = 0; i < server.listen_directives.size(); i++)
+	{
+		if (server.listen_directives[i].host == host_part && 
+		    server.listen_directives[i].port == port)
+			throw std::runtime_error("Duplicate port in listen directive: " + token);
+	}
+	
+	server.listen_directives.push_back(ListenDirective(host_part, port));
+	
+	// Parse additional ports if present (space-separated on same line)
+	while (peekToken() != ";")
+	{
+		if (!hasMoreTokens())
+			throw std::runtime_error("Unexpected end of file in listen directive");
+		
+		token = getNextToken();
+		if (token == ";")
+			break;
+		
+		// Check if this token also has host:port format
+		colon_pos = token.find(':');
+		if (colon_pos != std::string::npos)
+		{
+			host_part = token.substr(0, colon_pos);
+			token = token.substr(colon_pos + 1);
+		}
+		
+		port = atoi(token.c_str());
+		if (port < 1 || port > 65535)
+			throw std::runtime_error("Invalid port number: " + token);
+		
+		// Check for duplicates
+		bool duplicate = false;
+		for (size_t i = 0; i < server.listen_directives.size(); i++)
+		{
+			if (server.listen_directives[i].host == host_part && 
+			    server.listen_directives[i].port == port)
+			{
+				duplicate = true;
+				break;
+			}
+		}
+		
+		if (!duplicate)
+			server.listen_directives.push_back(ListenDirective(host_part, port));
+	}
+	
+	expectToken(";");
+}
+
 void ConfigParser::parseServer(ServerConfig& server)
 {
 	while (peekToken() != "}")
@@ -108,9 +178,22 @@ void ConfigParser::parseServerDirective(ServerConfig& server, const std::string&
 {
 	if (directive == "listen")
 	{
-		std::string value = getNextToken();
-		parseListen(server, value);
-		expectToken(";");
+		size_t tokens_before_semi = 0;
+		size_t check_idx = current_token;
+		while (check_idx < tokens.size() && tokens[check_idx] != ";")
+		{
+			tokens_before_semi++;
+			check_idx++;
+		}
+		
+		if (tokens_before_semi > 1)
+			parseMultiplePorts(server);
+		else
+		{
+			std::string value = getNextToken();
+			parseListen(server, value);
+			expectToken(";");
+		}
 	}
 	else if (directive == "server_name")
 	{

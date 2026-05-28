@@ -26,6 +26,7 @@ class ConfigParser
 		size_t parseSize(const std::string& size_str);
 		int parsePort(const std::string& port_str);
 		void parseListen(ServerConfig& server, const std::string& value);
+		void parseMultiplePorts(ServerConfig& server);
 		void validateServers();
 	
 	public:

@@ -230,27 +230,30 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	}
 	std::string path = resolvePath(normalized, *location, server);
 
+	
 	if (isDirectory(path))
-	{
-		std::string index = resolveIndex(path, *location, server);
-		if (!index.empty())
-		{
-			FileHandler handler;
-			FileResponse fr = handler.serveFile(index);
-			if (fr.status_code == 404)
-    			return serveErrorPage(404, server);
-			return fr;
-		}
+{
+    if (request.method != "GET")
+        return serveErrorPage(403, server);
 
-		if (location->autoindex)
-		{
-			DirectoryLister lister;
-			return lister.generateDirectoryListing(path, normalized);
-		}
-		else
-			return serveErrorPage(403, server);
+    std::string index = resolveIndex(path, *location, server);
+    if (!index.empty())
+    {
+        FileHandler handler;
+        FileResponse fr = handler.serveFile(index);
+        if (fr.status_code == 404)
+            return serveErrorPage(404, server);
+        return fr;
+    }
 
-	}
+    if (location->autoindex)
+    {
+        DirectoryLister lister;
+        return lister.generateDirectoryListing(path, normalized);
+    }
+    else
+        return serveErrorPage(403, server);
+}
 	// std::cout << "1. here🔥\n";
 	// if (isCGIRequest(path, *location))
 	// 	{
