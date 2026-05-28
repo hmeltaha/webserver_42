@@ -6,7 +6,7 @@
 #include "../requests/RequestParser.hpp"
 #include "../response/HttpResponse.hpp"
 #include "Server.hpp"
-#define TIMEOUT 5
+#define TIMEOUT 40
 
 enum ClientState
 {
