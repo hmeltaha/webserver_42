@@ -6,7 +6,7 @@ MainLoop::MainLoop(const std::vector<ServerConfig>& configs)
 	for (size_t i = 0; i < configs.size(); ++i)
 	{
 		servers.push_back(Server(configs[i], i));
-		servers[i].setSockets();
+		servers[i].loopSetSockets();
 	}
 	epollFD = -1;
 }
@@ -26,7 +26,7 @@ void MainLoop::setServers(const std::vector<ServerConfig>& configs)
 	for (size_t i = 0; i < configs.size(); ++i)
 	{
 		servers.push_back(Server(configs[i], i));
-		servers[i].setSockets();
+		servers[i].loopSetSockets();
 	}
 }
 
@@ -40,20 +40,34 @@ void MainLoop::addNewClients(int fd, int server_index)
 		{
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				break;
-			throw std::runtime_error(strerror(errno));
+			std::cerr << "Failed to accept new client: " << strerror(errno) << std::endl;
+			continue;
+			// throw std::runtime_error(strerror(errno));
 		}
-
-		// int flags = fcntl(clientFd, F_GETFL, 0);
-		// if (flags == -1)
-		// 	throw std::runtime_error(strerror(errno));
 		if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
-			throw std::runtime_error(strerror(errno));
+		{
+			close(clientFd);
+			std::cerr << "Failed to set client socket to non-blocking: " << strerror(errno) << std::endl;
+			// throw std::runtime_error(strerror(errno));
+			continue;
+		}
+		if (fcntl(clientFd, F_SETFD, FD_CLOEXEC) == -1) // Set FD_CLOEXEC to ensure the client socket is closed on execve
+		{
+			close(clientFd);
+			std::cerr << "Error: Failed to set client FD as FD_CLOEXEC\n";
+			continue;
+		}
+		
 		struct epoll_event event;
 		event.events = EPOLLIN;
 		event.data.fd = clientFd;
 		clients[clientFd] = Client(clientFd, server_index);
 		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, clientFd, &event) == -1)
-			throw std::runtime_error(strerror(errno));
+		{
+			close(clientFd);
+			std::cerr << "Failed to add client fd to epoll: " << strerror(errno) << std::endl;
+			// throw std::runtime_error(strerror(errno));
+		}
 	}
 }
 
@@ -64,10 +78,12 @@ void MainLoop::handleClientEpollIn(int fd)
 	int flag = recv(fd, buff, sizeof (buff),0);
 	if (flag <= 0)
 	{
-		if (flag == -1)
-		{
-				return;
-		}
+		// if (flag == -1)
+		// {
+		// 	if (errno == EAGAIN || errno == EWOULDBLOCK)
+		// 		return;
+		// }
+		epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, NULL);
 		close (fd);
 		clients.erase(fd);
 		return;
@@ -111,6 +127,7 @@ void MainLoop::handleClientEpollIn(int fd)
 						clients[fd].res.response = router.serveErrorPage(ok, config);
 						clients[fd].setResBuff(clients[fd].res.getHeaders());
 						clients[fd].setState(WRITING);
+						clients[fd].setStartTime(time(NULL));
 						struct epoll_event ev;
 						ev.events  = EPOLLOUT;
 						ev.data.fd = fd;
@@ -124,6 +141,7 @@ void MainLoop::handleClientEpollIn(int fd)
 				clients[fd].res.response = router.route(clients[fd].req, config);
 				clients[fd].setResBuff(clients[fd].res.getHeaders());
 				clients[fd].setState(WRITING);
+				clients[fd].setStartTime(time(NULL));
 				struct epoll_event ev;
 				ev.events  = EPOLLOUT;
 				ev.data.fd = fd;
@@ -154,15 +172,19 @@ void MainLoop::createEpoll()
 
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		// add sockets fds to epoll
-		int fd = servers[i].getSocketFd();
-		std::cout << "Adding server fd: " << fd << std::endl;
-		event.events = EPOLLIN;
-		event.data.fd = servers[i].getSocketFd();
-		serverTOClient[servers[i].getSocketFd()] = i;
-		// EPOLL_CTL_ADD -->  إضافة FD جديد للمراقبة]
-		if (epoll_ctl(epollFD, EPOLL_CTL_ADD, servers[i].getSocketFd(), &event) == -1)
-			throw std::runtime_error(strerror(errno));
+		// add all socket fds for each server to epoll
+		std::vector<int> fds = servers[i].getSocketFds();
+		for (size_t j = 0; j < fds.size(); j++)
+		{
+			int fd = fds[j];
+			std::cout << "Adding server fd: " << fd << std::endl;
+			event.events = EPOLLIN;
+			event.data.fd = fd;
+			socketFdToServerIndex[fd] = i;
+			// EPOLL_CTL_ADD -->  إضافة FD جديد للمراقبة
+			if (epoll_ctl(epollFD, EPOLL_CTL_ADD, fd, &event) == -1)
+				throw std::runtime_error(strerror(errno));
+		}
 	}
 }
 
@@ -180,8 +202,15 @@ void MainLoop::handleClientEpollOut(int fd)
 
 	if (sent <= 0)
 	{
-		if (sent == -1)
-				return;
+		// if (sent == -1)
+		// {
+		// 	if (errno == EAGAIN || errno == EWOULDBLOCK)
+		// 		return;
+		// 	std::cerr << "Failed to send response to client: " << strerror(errno) << std::endl;
+
+		// 	// throw std::runtime_error(strerror(errno));
+		// }
+		epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, NULL);
 		close(fd);
 		clients.erase(fd);
 		return;
@@ -189,23 +218,25 @@ void MainLoop::handleClientEpollOut(int fd)
 	clients[fd].setBytesSend(clients[fd].getBytesSend() + sent);
 	if (clients[fd].getBytesSend() >= res.size())
 	{
+		epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, NULL);
 		close(fd);
 		clients.erase(fd);
 	}
 }
-
-
-/**
- * EPOLLIN -->  جديد حاول الاتصال بالسيرفر Client
- * يوجد اتصال جديد ينتظر accept()
- */
 
 void MainLoop::start()
 {
 	createEpoll();
 	std::set<int> serverfds;
 	for (size_t i = 0; i < servers.size(); i++)
-		serverfds.insert(servers[i].getSocketFd());
+	{
+		std::vector<int> fds = servers[i].getSocketFds();
+		for (size_t j = 0; j < fds.size(); j++)
+		{
+			int fd = fds[j];
+			serverfds.insert(fd);
+		}
+	}
 	while (running)
 	{
 		int numEvents = epoll_wait(epollFD, events, MAX_EVENTS, 100);
@@ -218,7 +249,7 @@ void MainLoop::start()
 				handle_cgi.handleCgiOutput(fd, epollFD, clients);
 
 			else if (serverfds.find(fd) != serverfds.end())
-				addNewClients(fd, serverTOClient[fd]);
+				addNewClients(fd, socketFdToServerIndex[fd]);
 			else
 			{
 				if (events[i].events & (EPOLLHUP | EPOLLERR))
@@ -245,10 +276,11 @@ void MainLoop::checkTimeout()
 	std::map<int, Client>::iterator it = clients.begin();
 	while	 ( it != clients.end())
 	{
-		if (it->second.getState() == READING || it->second.getState() == READING_BODY)
+		if (it->second.getState() == READING || it->second.getState() == READING_BODY || it->second.getState() == WRITING)
 		{
-			if (time_now - it->second.getStartTime() > TIMEOUT)
+			if (time_now - it->second.getStartTime() >= TIMEOUT)
 			{
+				epoll_ctl(epollFD, EPOLL_CTL_DEL, it->first, NULL);
 				close(it->first);
 				std::map<int, Client>::iterator tmp = it;
 				 ++it;
@@ -263,11 +295,8 @@ void MainLoop::checkTimeout()
 	std::map<int, CgiProcess>::iterator cgiIt = handle_cgi.active_processes.begin();
 	while (cgiIt != handle_cgi.active_processes.end())
 	{
-		if (time_now - cgiIt->second.start_time > TIMEOUT)
+		if (time_now - cgiIt->second.start_time >= TIMEOUT)
 		{
-			printf("******************************************************************************cgi:%i\n", cgiIt->second.clientFd);
-			printf("time:%li\n", time_now);
-			fflush(stdout);
 			kill(cgiIt->second.pid, SIGKILL);
 			waitpid(cgiIt->second.pid, NULL, WNOHANG);
 
@@ -292,7 +321,6 @@ void MainLoop::checkTimeout()
 		++cgiIt;
 		handle_cgi.active_processes.erase(tmp);
 		continue;
-
 		}
 		else
 			++cgiIt;
@@ -302,7 +330,14 @@ void MainLoop::checkTimeout()
 void MainLoop::closeFds()
 {
 	for (size_t i = 0; i < servers.size(); i++)
-		close(servers[i].getSocketFd());
+	{
+		std::vector<int> fds = servers[i].getSocketFds();
+		for (size_t j = 0; j < fds.size(); j++)
+		{
+			int fd = fds[j];
+			close(fd);
+		}
+	}
 	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
 		close(it->first);
 	clients.clear();

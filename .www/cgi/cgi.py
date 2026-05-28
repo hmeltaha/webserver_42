@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
+import os
+import sys
 
-import time
+method = os.environ.get('REQUEST_METHOD', 'GET')
+query  = os.environ.get('QUERY_STRING', '')
 
-# Simulate long CGI processing
-time.sleep(21)
-
-# CGI response
-print("Status: 200 OK")
 print("Content-Type: text/html")
-print()
-
-print("""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Slow CGI</title>
-</head>
-<body>
-    <h1>CGI Finished After 15 Seconds</h1>
-</body>
-</html>
-""")
+print("")
+print("<html><body>")
+print("<h1>CGI Works</h1>")
+print("<p>Method: " + method + "</p>")
+print("<p>Query: " + query + "</p>")
+print("</body></html>")

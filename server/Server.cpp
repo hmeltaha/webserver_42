@@ -31,9 +31,20 @@ const ServerConfig& Server::getConfig() const
  *
  */
 
-void Server::setSockets()
+
+
+void Server::loopSetSockets()
 {
-	serverFd = socket(AF_INET, SOCK_STREAM, 0);
+	for (size_t i = 0; i < config.listen_directives.size(); i++)
+	{
+		setSockets(config.listen_directives[i].port);
+	}
+}
+
+
+void Server::setSockets(int port)
+{
+	int serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverFd == -1)
 		throw std::runtime_error(strerror(errno));
 	 /**
@@ -48,9 +59,10 @@ void Server::setSockets()
 
 	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
-	address.sin_port = htons(config.listen_directives[0].port);
-	// address.sin_addr.s_add = INADDR_ANY;
-	address.sin_addr.s_addr = INADDR_ANY;//inet_addr(config.listen_directives[index].host.c_str());
+	address.sin_port = htons(port);
+	std::cout << "Binding to port: " << port << std::endl;
+
+	address.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverFd,(struct sockaddr*) &address, sizeof(address)) < 0)
 	{
 		close(serverFd);
@@ -58,18 +70,22 @@ void Server::setSockets()
 	}
 	if (listen(serverFd, 5000) < 0)
 		throw std::runtime_error(strerror(errno));
-
-	// Make the socket non-blocking
-	// int flags = fcntl(serverFd, F_GETFL, 0);
-	// if (flags == -1)
-	// 	throw std::runtime_error(strerror(errno));
 	if (fcntl(serverFd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error(strerror(errno));
+	
+	serverFds.push_back(serverFd);
 }
 
 int Server::getSocketFd() const
 {
-	return serverFd;
+	if (serverFds.empty())
+		return -1;
+	return serverFds[0];
+}
+
+std::vector<int> Server::getSocketFds() const
+{
+	return serverFds;
 }
 
 int Server::getIndex() const

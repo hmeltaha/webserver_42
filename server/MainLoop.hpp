@@ -1,8 +1,8 @@
 #ifndef MAIN_LOOP_HPP
 #define MAIN_LOOP_HPP
 
-#define CHUNK_SIZE 1000
-#define MAX_EVENTS 2000
+#define CHUNK_SIZE 65536
+#define MAX_EVENTS 200
 
 #include "Server.hpp"
 #include <vector>
@@ -29,6 +29,7 @@ class MainLoop
 		std::vector<Server> servers;
 		std::map<int, Client> clients;
 		std::map<int, int> serverTOClient;
+		std::map<int, int> socketFdToServerIndex;
 		struct epoll_event events[MAX_EVENTS];
 		CgiHandler handle_cgi;
 

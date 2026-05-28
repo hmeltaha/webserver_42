@@ -108,7 +108,7 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 
 	if (!relative_path.empty() && relative_path[0] != '/')
 		relative_path = "/" + relative_path;
-	std::cout << "root " << root<< std::endl;
+	// std::cout << "root " << root<< std::endl;
 	std::string filesystem_path = root;
 	if (!filesystem_path.empty() && filesystem_path[filesystem_path.length() - 1] == '/' && relative_path[0] == '/')
 		filesystem_path += relative_path.substr(1);
@@ -123,10 +123,6 @@ std::string Router::resolvePath(const std::string& uri, const LocationConfig& lo
 
 bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& location) const
 {
-	// std::cout << "cgi_path = [" << location.cgi_path << "]\n";
-// std::cout << "cgi_extension = [" << location.cgi_extension << "]\n";
-// std::cout << "file_path = [" << file_path << "]\n";
-
 	if (location.cgi_path.empty() || location.cgi_extension.empty())
 		return false;
 
@@ -134,7 +130,7 @@ bool Router::isCGIRequest(const std::string& file_path, const LocationConfig& lo
 	if (dot_pos == std::string::npos)
 		return false;
 	std::string extension = file_path.substr(dot_pos);
-	std::cout << "location.cgi_extension: " << location.cgi_extension << ", file extension: " << extension << std::endl;
+	// std::cout << "location.cgi_extension: " << location.cgi_extension << ", file extension: " << extension << std::endl;
 	if (extension == location.cgi_extension)
 		return true;
 	// std::cout << "1. heree🔥\n";

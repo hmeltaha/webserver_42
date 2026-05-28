@@ -14,7 +14,7 @@ int main(int ac, char** av)
 		std::cout << "No config file provided."<< std::endl;
 		return 1;
 	}
-	MainLoop mainLoop;
+	MainLoop *mainLoop = new MainLoop();
 	try
 	{
 		std::string config_file = av[1];
@@ -22,15 +22,17 @@ int main(int ac, char** av)
 		ConfigParser parser;
 		parser.parse(config_file);
 		const std::vector<ServerConfig>& serv = parser.getServers();
-		mainLoop.setServers(serv);
-		mainLoop.start();
+		mainLoop->setServers(serv);
+		mainLoop->start();
 	}
 	catch (const std::exception& e)
 	{
 		std::cerr << "Error : " << e.what() << std::endl;
-		mainLoop.closeFds();
+		mainLoop->closeFds();
+		delete mainLoop;
 		return 1;
 	}
+	delete mainLoop;
 }
 
 

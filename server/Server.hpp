@@ -20,15 +20,17 @@ class Server
 {
 	private:
 		ServerConfig config;
-		int serverFd;
+		std::vector<int> serverFds;
 		sockaddr_in address;
 		int index;
 	public:
 		Server(const ServerConfig& config, int index);
 		~Server();
 		int getSocketFd() const;
+		std::vector<int> getSocketFds() const;
 		int getIndex() const;
-		void setSockets();
+		void loopSetSockets();
+		void setSockets(int port);
 		const ServerConfig& getConfig() const;
 };
 

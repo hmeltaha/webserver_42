@@ -1,5 +1,6 @@
 // #include "MainLoop.hpp"
 #include "SignalHandler.hpp"
+#include <unistd.h>
 
 
 void addSignals()
@@ -14,7 +15,8 @@ void signalHandler(int sig)
 {
 	if (sig == SIGINT || sig == SIGTSTP)
 	{
-		std::cout << std::endl << "Shutting the server down!!!" << std::endl;
+		const char msg[] = "\nShutting the server down!!!\n";
+		write(STDOUT_FILENO, msg, sizeof(msg) - 1);
 		running = false;
 	}
 }
