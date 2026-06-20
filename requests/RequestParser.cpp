@@ -55,15 +55,42 @@ static void remove_cr(std::string& line)
 
 // parsing
 
+// bool RequestParser::parse_request_line(const std::string& line, HttpRequest& request)
+// {
+//     std::istringstream ss(line);
+
+//     if (!(ss >> request.method >> request.path >> request.version))
+//         return false;
+
+//     if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1")
+//         return false;
+
+//     return true;
+// }
+
 bool RequestParser::parse_request_line(const std::string& line, HttpRequest& request)
 {
     std::istringstream ss(line);
 
     if (!(ss >> request.method >> request.path >> request.version))
+    {
+        request.status_code = 400;
         return false;
+    }
 
     if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1")
+    {
+        request.status_code = 400;
         return false;
+    }
+
+    if (request.method != "GET" &&
+        request.method != "POST" &&
+        request.method != "DELETE")
+    {
+        request.status_code = 405;
+        return false;
+    }
 
     return true;
 }
@@ -129,8 +156,17 @@ HttpRequest RequestParser::parse(const std::string& raw_request)
         return request;
     remove_cr(line);
 
-    if (line.empty() || !parse_request_line(line, request))
-        return request;
+    // if (line.empty() || !parse_request_line(line, request))
+    //     return request;
+
+	if (line.empty())
+	{
+		request.status_code = 400;
+		return request;
+	}
+
+	if (!parse_request_line(line, request))
+		return request;
 
     //store full URI before modifying anything
     request.uri = request.path;

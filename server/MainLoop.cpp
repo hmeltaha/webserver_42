@@ -101,8 +101,27 @@ void MainLoop::handleClientEpollIn(int fd)
 			fullRequest += clients[fd].body;
 		}
 		clients[fd].req = clients[fd].parser.parse(fullRequest);
-
 		Router router;
+		
+		if (clients[fd].req.status_code != 200)
+		{
+			clients[fd].res.response = router.serveErrorPage(
+				clients[fd].req.status_code,
+				servers[clients[fd].getServerToConnect()].getConfig()
+			);
+
+			clients[fd].setResBuff(clients[fd].res.getHeaders());
+			clients[fd].setState(WRITING);
+
+			struct epoll_event ev;
+			ev.events = EPOLLOUT;
+			ev.data.fd = fd;
+			epoll_ctl(epollFD, EPOLL_CTL_MOD, fd, &ev);
+
+			return;
+		}
+
+		
 		router.seeIfPayloadTooLarge(clients[fd]);
 
 		if (clients[fd].getState() == PROCESSING)

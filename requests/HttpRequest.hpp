@@ -14,6 +14,7 @@ class HttpRequest
 		std::string body;
 		std::string query;
 		std::string uri;
+		int status_code;
 
 		HttpRequest();
 };

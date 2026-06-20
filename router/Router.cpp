@@ -336,6 +336,8 @@ FileResponse Router::serveErrorPage(int code, const ServerConfig& server)
 		response.body = "<html><body><h1>404 Not Found</h1></body></html>";
     else if (code == 403)
         response.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+	else if (code == 405)
+		response.body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
     return response;
 }
 
