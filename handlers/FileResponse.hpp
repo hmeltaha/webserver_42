@@ -4,7 +4,7 @@
 #include <string>
 #include <cstddef>
 /**
- * 
+ *
  * response information:
  * status_code: HTTP status code (e.g., 200, 404, 500)
  * mime_type: MIME type of the response (e.g., "text/html", "application, json")
@@ -17,6 +17,7 @@ struct FileResponse
 	std::string mime_type;
 	std::string body;
 	size_t content_length;
+	std::string location;
 
 	FileResponse() : status_code(500), content_length(0) {}
 };

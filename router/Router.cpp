@@ -206,7 +206,8 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 	{
 		response.status_code = 301;
 		response.mime_type = "text/html";
-		response.body = location->redirect;
+		response.location = location->redirect;
+		response.body = "";
 		return response;
 	}
 
