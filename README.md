@@ -39,7 +39,7 @@ The project was developed under the constraints of the 42 curriculum, using only
 
 - HTTP/1.1 support
 - Non-blocking I/O
-- `poll()`-based multiplexing
+- `epoll()`-based multiplexing
 - Multiple simultaneous clients
 - Static file serving
 - File uploads
@@ -72,7 +72,7 @@ Main components include:
 
 ---
 
-## Instructions
+## Instructions:
 
 ### Requirements
 
@@ -113,42 +113,12 @@ make re     # Recompile everything
 
 ### Running the Server
 
-Run the server with the default configuration or with a custom configuration file:
+Run the server with a custom configuration file:
 
 ```bash
-./webserv
+./webserv config/webserver.conf
 ```
 
-```bash
-./webserv config/default.conf
-```
-
----
-
-## Example Configuration
-
-```conf
-server {
-    listen 8080;
-    server_name localhost;
-
-    root ./www;
-    index index.html;
-
-    client_max_body_size 1000000;
-
-    error_page 404 ./errors/404.html;
-
-    location / {
-        allowed_methods GET POST DELETE;
-    }
-
-    location /cgi-bin {
-        cgi_extension .py;
-        cgi_path /usr/bin/python3;
-    }
-}
-```
 
 ---
 
@@ -175,7 +145,7 @@ curl http://localhost:8080
 POST request:
 
 ```bash
-curl -X POST -d "hello" http://localhost:8080/upload
+curl -X POST -d "hello" http://localhost:8080/upload/file.txt
 ```
 
 DELETE request:
@@ -187,7 +157,7 @@ curl -X DELETE http://localhost:8080/file.txt
 CGI request:
 
 ```bash
-curl http://localhost:8080/cgi/test.py
+curl http://localhost:8080/cgi/cgi.py
 ```
 
 ---
