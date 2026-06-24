@@ -40,7 +40,7 @@ Client::Client(const Client& other)
 	this->reqBuff = other.reqBuff;
 	this->body = other.body;
 	this->state = other.state;
-	this->bytes_send = 0;
+	this->bytes_send = other.bytes_send;
 	this->server_to_connect = other.server_to_connect;
 	this->payload_too_large = other.payload_too_large;
 	start_time = other.start_time;
@@ -105,22 +105,19 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 	if (state != READING && state != READING_BODY)
 		return;
 
-	// If still reading headers
 	if (state == READING)
 	{
 		reqBuff += buff;
 		size_t headerEnd = reqBuff.find("\r\n\r\n");
 		if (headerEnd == std::string::npos)
-			return;  // Headers not complete yet
+			return;
 
-		// Extract body from this chunk if present
 		size_t bodyStartInChunk = buff.find("\r\n\r\n");
 		if (bodyStartInChunk != std::string::npos)
 		{
 			body += buff.substr(bodyStartInChunk + 4);
 		}
 
-		// Look for Content-Length in headers
 		size_t pos = reqBuff.find("Content-Length:");
 		if (pos != std::string::npos)
 		{
@@ -138,7 +135,6 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 				return;
 			}
 
-			// Keep only headers in reqBuff, move to body reading
 			reqBuff = reqBuff.substr(0, headerEnd + 4);
 
 			if ((size_t)body.length() >= len_body)
@@ -148,13 +144,11 @@ void Client::addToReqBuff(const std::string& buff, const ServerConfig& config)
 		}
 		else
 		{
-			// No body expected
 			state = PROCESSING;
 		}
 	}
 	else if (state == READING_BODY)
 	{
-		// Only accumulate body data
 		body += buff;
 		if ((size_t)body.length() >= len_body)
 			state = PROCESSING;

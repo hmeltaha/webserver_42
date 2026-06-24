@@ -25,14 +25,14 @@ class Client
 		std::string resBuff;
 		ClientState state;
 		time_t start_time;
-		size_t bytes_send; //remove it later
+		size_t bytes_send;
 		bool payload_too_large;
 
 	public:
-		std::string body;  // Made public for MainLoop to access
-		HttpRequest req;		// private or public ???????????????
-		RequestParser parser;	// private or public ???????????????
-		HttpResponse res;		// private or public ???????????????
+		std::string body;
+		HttpRequest req;
+		RequestParser parser;
+		HttpResponse res;
 		int server_to_connect;
 
 		Client();

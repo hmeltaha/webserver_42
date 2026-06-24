@@ -222,15 +222,15 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
 
 	if (request.method == "POST" && !location->upload_path.empty())
 	{
-		std::cout << "upload_path: " << location->upload_path << std::endl;
-		std::cout << "path: " << location->path << std::endl;
+		// std::cout << "upload_path: " << location->upload_path << std::endl;
+		// std::cout << "path: " << location->path << std::endl;
 
 		UploadHandler upload;
 		return upload.handleUpload(request, *location, server);
 	}
 	std::string path = resolvePath(normalized, *location, server);
 
-	
+
 	if (isDirectory(path))
 {
     if (request.method != "GET")

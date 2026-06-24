@@ -57,7 +57,7 @@ void MainLoop::addNewClients(int fd, int server_index)
 			std::cerr << "Error: Failed to set client FD as FD_CLOEXEC\n";
 			continue;
 		}
-		
+
 		struct epoll_event event;
 		event.events = EPOLLIN;
 		event.data.fd = clientFd;
@@ -78,11 +78,6 @@ void MainLoop::handleClientEpollIn(int fd)
 	int flag = recv(fd, buff, sizeof (buff),0);
 	if (flag <= 0)
 	{
-		// if (flag == -1)
-		// {
-		// 	if (errno == EAGAIN || errno == EWOULDBLOCK)
-		// 		return;
-		// }
 		epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, NULL);
 		close (fd);
 		clients.erase(fd);
@@ -93,16 +88,14 @@ void MainLoop::handleClientEpollIn(int fd)
 	if (clients[fd].getState() == PROCESSING)
 	{
 		clients[fd].setStartTime(time(NULL));
-		// Reconstruct full request for parsing (headers + body)
 		std::string fullRequest = clients[fd].getReqBuff();
 		if (!clients[fd].body.empty())
 		{
-			// Add body after the headers
 			fullRequest += clients[fd].body;
 		}
 		clients[fd].req = clients[fd].parser.parse(fullRequest);
 		Router router;
-		
+
 		if (clients[fd].req.status_code != 200)
 		{
 			clients[fd].res.response = router.serveErrorPage(
@@ -121,7 +114,7 @@ void MainLoop::handleClientEpollIn(int fd)
 			return;
 		}
 
-		
+
 		router.seeIfPayloadTooLarge(clients[fd]);
 
 		if (clients[fd].getState() == PROCESSING)
@@ -196,7 +189,7 @@ void MainLoop::createEpoll()
 		for (size_t j = 0; j < fds.size(); j++)
 		{
 			int fd = fds[j];
-			std::cout << "Adding server fd: " << fd << std::endl;
+			// std::cout << "Adding server fd: " << fd << std::endl;
 			event.events = EPOLLIN;
 			event.data.fd = fd;
 			socketFdToServerIndex[fd] = i;
@@ -221,14 +214,6 @@ void MainLoop::handleClientEpollOut(int fd)
 
 	if (sent <= 0)
 	{
-		// if (sent == -1)
-		// {
-		// 	if (errno == EAGAIN || errno == EWOULDBLOCK)
-		// 		return;
-		// 	std::cerr << "Failed to send response to client: " << strerror(errno) << std::endl;
-
-		// 	// throw std::runtime_error(strerror(errno));
-		// }
 		epoll_ctl(epollFD, EPOLL_CTL_DEL, fd, NULL);
 		close(fd);
 		clients.erase(fd);
