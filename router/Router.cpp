@@ -70,14 +70,21 @@ bool Router::fileExists(const std::string& index_path) const
 }
 std::string Router::resolveIndex(const std::string& directory_path, const LocationConfig& location, const ServerConfig& server)const
 {
-	std::string index_file;
+	// If location defines its own index, only check that — no server fallback
 	if (!location.index.empty())
-		index_file = location.index;
-	else if (!server.index.empty())
-		index_file = server.index;
-	std::string index_path = directory_path + "/" + index_file;
-	if (fileExists(index_path) && isRegularFile(index_path))
-		return index_path;
+	{
+		std::string index_path = directory_path + "/" + location.index;
+		if (fileExists(index_path) && isRegularFile(index_path))
+			return index_path;
+		return "";
+	}
+	// Location has no index configured — fall back to server-level index
+	if (!server.index.empty())
+	{
+		std::string index_path = directory_path + "/" + server.index;
+		if (fileExists(index_path) && isRegularFile(index_path))
+			return index_path;
+	}
 	return "";
 }
 
@@ -238,22 +245,24 @@ FileResponse Router::route(const HttpRequest& request, const ServerConfig& serve
         return serveErrorPage(403, server);
 
     std::string index = resolveIndex(path, *location, server);
-    if (!index.empty())
-    {
-        FileHandler handler;
-        FileResponse fr = handler.serveFile(index);
-        if (fr.status_code == 404)
-            return serveErrorPage(404, server);
-        return fr;
-    }
+	if (!index.empty())
+	{
+		FileHandler handler;
+		FileResponse fr = handler.serveFile(index);
+		if (fr.status_code == 404)
+    		return serveErrorPage(404, server);
+		return fr;
+	}
 
-    if (location->autoindex)
-    {
-        DirectoryLister lister;
-        return lister.generateDirectoryListing(path, normalized);
-    }
-    else
-        return serveErrorPage(403, server);
+   if (location->index.empty())
+	{
+		if (location->autoindex)
+		{
+			DirectoryLister lister;
+			return lister.generateDirectoryListing(path, request.uri);
+		}
+	}
+		return serveErrorPage(403, server);
 }
 	// std::cout << "1. here🔥\n";
 	// if (isCGIRequest(path, *location))

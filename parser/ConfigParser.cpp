@@ -71,8 +71,11 @@ void ConfigParser::tokenize(const std::string& filename)
 	std::string line;
 	while (std::getline(file, line))
 	{
-		if (!line.empty() && line[0] == '#')
-		continue;
+		size_t com_pos = line.find('#');
+if (com_pos != std::string::npos)
+    line = line.substr(0, com_pos);
+if (line.find_first_not_of(" \t\r\n") == std::string::npos)
+    continue;
 		std::istringstream iss(line);
 		std::string word;
 		while (iss >> word)
